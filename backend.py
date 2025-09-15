@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
-#from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
 import base64
@@ -137,8 +137,8 @@ def web_driver():
     options.add_argument('--disable-gpu')
     options.add_argument("--window-size=1920, 1200")
     options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(options=options)
-    #driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
+    #driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
     return driver
 
 def automate_Cultivated_task(tid):

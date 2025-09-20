@@ -6,7 +6,7 @@ import time
 from pages.security import basic_stats, update_visitor_count
 import individual
 
-pages = ["HOME", "SEARCH", "SPATIAL-EXPRESSION", "RNA", "miRNA-Target", "PPI", "LOCALIZATION", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
+pages = ["HOME", "SEARCH", "SPATIAL-EXPRESSION", "RNA", "miRNA-Target","TF", "PPI", "LOCALIZATION", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
 logo_path = ("logo1.svg")
 options={"use_padding": True, "show_menu":False}
 
@@ -18,12 +18,14 @@ styles = {
         "align-items": "center",  # Vertically center the items
         "justify-content": "space-between",  # Space out the items evenly
         "padding": "0 1rem",  # Add padding to the left and right of the navigation bar
-        "overflow-x": "auto",  # Enable horizontal scrolling if the content overflows
+    "overflow-x": "auto",  # Enable horizontal scrolling if the content overflows
+    "overflow-y": "hidden",  # Disable vertical scrolling in the navbar
         "white-space": "nowrap",  # Prevent items from wrapping to a new line
         "text-color": "rgba(255,255,255,1)",
     },
     "div": {
         "width": "100%",
+        "display": "flex",  # Use flexbox for layout
     },
     "span": {
         "border-radius": "0.5rem",  # Rounded corners for the headings
@@ -54,9 +56,9 @@ st.markdown("""
                 }
         </style>
         """, unsafe_allow_html=True)
-#st.markdown("""<style>.stApp {padding-top: 6rem !important;}</style>""", unsafe_allow_html=True)
+
 if "current_page" not in st.session_state:
-    st.session_state.current_page = "HOME"  # Default to Home page on first load
+    st.session_state.current_page = "HOME"
 page = st_navbar(pages, logo_path=logo_path, styles=styles, options=options,logo_page="HOME")
 
 # Logic for redirecting to login or setting pages
@@ -69,22 +71,17 @@ elif st.session_state.get("redirected_to_login", True) is False:
         st.session_state.first_time = False
         st.session_state.programmatic_nav = False
 else:
-    # Initialize last_navbar_page if not exists
     if "last_navbar_page" not in st.session_state:
         st.session_state.last_navbar_page = "HOME"
     
-    # Check if user clicked on navbar (page changed from navbar)
     if page != st.session_state.last_navbar_page and page in pages:
-        # User clicked on navbar item, override any programmatic navigation
         st.session_state.current_page = page
         st.session_state.programmatic_nav = False
         st.session_state.last_navbar_page = page
     elif not st.session_state.get("programmatic_nav", False):
-        # No programmatic navigation active, follow navbar selection
         if page in pages:
             st.session_state.current_page = page
             st.session_state.last_navbar_page = page
-    # If programmatic_nav is True, keep the current page as set programmatically
 
 external_links = {
     "NCBI": "https://www.ncbi.nlm.nih.gov/",
@@ -101,7 +98,6 @@ external_links = {
     "Cassavabase": "https://www.cassavabase.org"}
 
 from backend import img_to_base64
-#st.sidebar.image("logo1.png", use_column_width=True)
 with open("logo1.png", "rb") as img_file:
         img_data = img_file.read()
 img_sidebar=img_to_base64(img_data)
@@ -124,7 +120,7 @@ if 'display_count' not in st.session_state:
 
 if st.session_state.first_access:
     st.session_state.visitor_count = update_visitor_count()
-    st.session_state.member, st.session_state.search=basic_stats() #change
+    st.session_state.member, st.session_state.search=basic_stats()
 
 if st.session_state.display_count:
     st.toast(f"Visitor Count : {st.session_state.visitor_count}")
@@ -132,7 +128,7 @@ if st.session_state.display_count:
 
 visitor_placeholder = st.sidebar.empty()
 
-if st.session_state.get("authenticated",False): #logout
+if st.session_state.get("authenticated",False):
     visitor_placeholder.metric(value=st.session_state.visitor_count, label="Total Visitors", border=True)
     col1,col2=st.sidebar.columns(2)
     member_placeholder = col1.empty()
@@ -245,10 +241,10 @@ functions = {
     "ABOUT US": pg.about_page,
     "LOGIN": pg.login_page,
     "PRIMER": individual.primer_info_page,
+    "CRISPR": individual.crispr_info_page,
+    "TF": individual.tf_info_page
 }
 
 go_to = functions.get(st.session_state.current_page)
 if go_to:
     go_to()
-
-

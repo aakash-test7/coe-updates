@@ -997,7 +997,6 @@ def process_locid2(locid):
     else:
         return None
 
-
 def show_sequence_data_p(tid, is_multi=False):
     """Display sequence data for a transcript ID."""
     if not is_multi:
@@ -1037,6 +1036,85 @@ def show_sequence_data_p(tid, is_multi=False):
             else:
                 st.write(f"No matching data found for Gene ID: {t_id}\n")
 
+def show_sequence_data_cds(tid, is_multi=False):
+    """Display sequence data for a transcript ID."""
+    if not is_multi:
+        matching_row = df[df['Transcript id'] == tid]
+        if not matching_row.empty:
+            cds_code = format_sequence(matching_row['Cds Sequence'].values[0])
+
+            # Display as code block with copy functionality
+            with st.expander("CDS Sequence", expanded=True):
+                st.code(cds_code, language="text")
+
+            combined_file_content = (
+                f">{tid}|{tid} CDS Sequence\n{cds_code}\n\n"
+            )
+            col1,col2,col3=st.columns([1,2,1])
+            with col2:
+                st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+
+            return True
+        return False
+    else:
+        # For multi transcript IDs
+        for t_id in tid:
+            matching_rows = df[df['Transcript id'] == t_id]
+            if not matching_rows.empty:
+                cds_code = format_sequence(matching_rows['Cds Sequence'].values[0])
+
+                with st.expander(f"{t_id} CDS Sequence", expanded=True):
+                    st.code(cds_code, language="text")
+
+                combined_file_content = (
+                    f">{t_id}|{t_id} CDS Sequence\n{cds_code}\n\n"
+                )
+                col1,col2,col3=st.columns([1,2,1])
+                with col2:
+                    st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+            else:
+                st.write(f"No matching data found for Gene ID: {t_id}\n")
+
+def show_sequence_data_g_p(tid, is_multi=False):
+    """Display sequence data for a transcript ID."""
+    if not is_multi:
+        matching_row = df[df['Transcript id'] == tid]
+        if not matching_row.empty:
+            peptide_code = format_sequence(matching_row['Peptide Sequence'].values[0])
+            gene_code = format_sequence(matching_row['Genomic Sequence'].values[0])
+
+            # Display as code block with copy functionality
+            with st.expander("Genomic Sequence"):
+                st.code(gene_code, language="text")
+            with st.expander("Peptide Sequence"):
+                st.code(peptide_code, language="text")
+
+            combined_file_content = (
+                f">{tid}|{tid} Genomic Sequence\n{gene_code}\n\n"
+                f">{tid}|{tid} Peptide Sequence\n{peptide_code}\n\n")
+            col1,col2,col3=st.columns([1,2,1])
+            with col2:
+                st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+        return False
+    else:
+        # For multi transcript IDs
+        for t_id in tid:
+            matching_rows = df[df['Transcript id'] == t_id]
+            if not matching_rows.empty:
+                peptide_code = format_sequence(matching_rows['Peptide Sequence'].values[0])
+                gene_code = format_sequence(matching_rows['Genomic Sequence'].values[0])
+
+                with st.expander(f"{t_id} Genomic Sequence"):
+                    st.code(gene_code, language="text")
+                with st.expander(f"{t_id} Peptide Sequence"):
+                    st.code(peptide_code, language="text")
+
+                combined_file_content = (
+                    f">{t_id}|{t_id} Genomic Sequence\n{gene_code}\n\n"
+                    f">{t_id}|{t_id} Peptide Sequence\n{peptide_code}\n\n")
+                col1,col2,col3=st.columns([1,2,1])
+                with col2:
+                    st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
 def header_styled(title: str, tagline: str):
     st.markdown(f"""

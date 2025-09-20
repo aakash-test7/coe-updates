@@ -8,3 +8,5 @@ from individual.localization import local_info_page
 from individual.orthologs import orthologs_info_page
 from individual.snp import snp_info_page
 from individual.primer import primer_info_page
+from individual.crispr import crispr_info_page
+from individual.plantregmap import tf_info_page

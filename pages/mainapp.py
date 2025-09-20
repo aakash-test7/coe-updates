@@ -6,21 +6,26 @@ from pages.footer import base_footer
 from pages.security import connect_to_db
 
 def home_page():        
-    #st.markdown("""<style>.block-container {padding-top: 6rem;padding-bottom: 2rem;padding-left: 1rem;padding-right: 1rem;}</style>""", unsafe_allow_html=True)
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
     col1,col2,col3=st.columns([1,2,1])
     with col1:
-        con=st.container(border=False, key="con01hp")
+        con=st.container(border=False, key="con101hp")
         with con:
             if st.button("BROWSE", use_container_width=True, key="navBrowse", type="primary"):
                 st.session_state["programmatic_nav"] = True
                 st.session_state["current_page"] = "GENE-INFO"
                 st.rerun()
-        con=st.container(border=False, key="con02hp")
+        con=st.container(border=False, key="con102hp")
         with con:
-            if st.button("PRIMER DESIGN", use_container_width=True, key="navPrimer", type="primary"):
+            if st.button("PRIMER Design", use_container_width=True, key="navPrimer", type="primary"):
                 st.session_state["programmatic_nav"] = True
                 st.session_state["current_page"] = "PRIMER"
+                st.rerun()
+        con=st.container(border=False, key="con103hp")
+        with con:
+            if st.button("SNP Calling", use_container_width=True, key="navSNP", type="primary"):
+                st.session_state["programmatic_nav"] = True
+                st.session_state["current_page"] = "SNP-CALLING"
                 st.rerun()
     col2.markdown(''
         '<style>'
@@ -32,11 +37,12 @@ def home_page():
         '        color: #f5d7be;'
         '    }'
         '    .hp-container {'
-        '        max-width: 1000px;'
+        '        max-width: 100%;'
+        '        min-height: 500px;'
         '        background-color: #833c0d;'
         '        margin: 0 auto;'
         '        padding: 20px;'
-        '        border-radius: 2rem;'
+        '        border-radius: 1rem;'#2rem
         '        transition: all 0.3s ease-in-out !important;'
         '        box-shadow: 0 4px 8px rgba(0,0,0,0.1);'
         '    }'
@@ -59,16 +65,6 @@ def home_page():
         '        font-style: italic;'
         '        text-decoration: underline;'
         '    }'
-        '    .hp-list {'
-        '        list-style-type: square;'
-        '        margin-left: 20px;'
-        '    }'
-        '    /* Additional Paragraphs */'
-        '    .hp-additional-paragraph {'
-        '        font-size: 1rem;'
-        '        line-height: 1.6;'
-        '        margin-bottom: 30px;'
-        '    }'
         '</style>'
         '<div class="hp-body">'
         '  <div class="hp-container">'
@@ -79,34 +75,30 @@ def home_page():
         '    <br><p class="hp-paragraph">'
         '      Chickpea (<i>Cicer arietinum</i> L.), a major legume valued for its high protein content and predominantly cultivated in arid and semi-arid regions. With the advent of high throughput sequencing technologies vast amount of genomic and transcriptomic data have been generated. To effectively utilize this wealth of information, we developed AI-driven platform, the “CHICKPEA OMICS EXPLORER”. This interactive database integrates multiple genomic resources including Phytozome, NCBI, CicerSeq and the chickpea transcriptome database. It offers comprehensive tools for spatial-temporal gene expression profiling, motif discovery, RNA coding potential analysis, protein interaction networks, pathway enrichment analysis, SNP detection, and ortholog identification. By consolidating diverse datasets and analysis, the Chickpea Omics Explorer serves as a powerful resourse for trait dissection, molecular breeding and functional genomics research in chickpea.'
         '    </p>'
-        '    <ul class="hp-list">'
-        '    </ul>'
-        '    <!-- Additional Paragraphs -->'
-        '    <p class="hp-additional-paragraph">'
-        '    </p>'
-        '    <p class="hp-additional-paragraph">'
-        '    </p>'
-        '    <!-- More Text -->'
-        '    <p class="hp-additional-paragraph">'
-        '    </p>'
         '  </div>'
         '</div>'
         '', unsafe_allow_html=True)
     with col3:
-        con=st.container(border=False, key="con03hp")
-        with con:
-            if st.button("SNP CALLING", use_container_width=True, key="navSNP", type="primary"):
-                st.session_state["programmatic_nav"] = True
-                st.session_state["current_page"] = "SNP-CALLING"
-                st.rerun()
         con=st.container(border=False, key="con04hp")
         with con:
-            if st.button("CRISPR DESIGN", use_container_width=True, key="navCRISPR", type="primary"):
+            if st.button("Gene Structure", use_container_width=True, key="navGSDS", type="primary"):
                 st.write("This feature is under development. Please check back later.")
                 #st.session_state["programmatic_nav"] = True
-                #st.session_state["current_page"] = "CRISPR-DESIGN"
+                #st.session_state["current_page"] = "SNP-CALLING"
                 #st.rerun()
-    # Style specifically for navBrowse and navSNP buttons
+        con=st.container(border=False, key="con05hp")
+        with con:
+            if st.button("SnapGene", use_container_width=True, key="navSNAP", type="primary"):
+                st.write("This feature is under development. Please check back later.")
+                #st.session_state["programmatic_nav"] = True
+                #st.session_state["current_page"] = "GO-ANALYSIS"
+                #st.rerun()
+        con=st.container(border=False, key="con06hp")
+        with con:
+            if st.button("CRISPR Construct", use_container_width=True, key="navCRISPR", type="primary"):
+                st.session_state["programmatic_nav"] = True
+                st.session_state["current_page"] = "CRISPR"
+                st.rerun()
     st.markdown("""
     <style>
     [data-testid="stBaseButton-primary"] div[data-testid="stMarkdownContainer"] p {
@@ -121,7 +113,7 @@ def home_page():
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        min-height: 200px !important;
+        min-height: 150px !important;
         background-color: #833c0d !important;  /* Default background color */
         transition: all 0.3s ease-in-out !important;
     }
@@ -130,29 +122,19 @@ def home_page():
         background-color: rgba(197,91,17,1) !important;  /* Hover background color */
     }
     
-    .stVerticalBlock.st-key-con2hp, .stVerticalBlock.st-key-con31hp, .stVerticalBlock.st-key-con32hp, .stVerticalBlock.st-key-con11hp, .stVerticalBlock.st-key-con12hp {
-        background-color: rgba(197,91,17,1); 
-        padding: 20px; 
-        border-radius: 10px; 
-        transition: all 0.3s ease-in-out;
-    } 
-    .stVerticalBlock.st-key-con03hp, .stVerticalBlock.st-key-con01hp, .stVerticalBlock.st-key-con02hp, .stVerticalBlock.st-key-con04hp {
+    .stVerticalBlock.st-key-con03hp, .stVerticalBlock.st-key-con01hp, .stVerticalBlock.st-key-con02hp,  {
         background-color: #833c0d;
         padding: 20px;
         border-radius: 2rem;
         transition: all 0.3s ease-in-out;
     }
-    .stVerticalBlock.st-key-con2hp:hover, .stVerticalBlock.st-key-con31hp:hover, .stVerticalBlock.st-key-con32hp:hover, .stVerticalBlock.st-key-con11hp:hover, .stVerticalBlock.st-key-con12hp:hover, .stVerticalBlock.st-key-con03hp:hover, .stVerticalBlock.st-key-con01hp:hover, .stVerticalBlock.st-key-con04hp:hover, .stVerticalBlock.st-key-con02hp:hover {
+    .stVerticalBlock.st-key-con03hp:hover, .stVerticalBlock.st-key-con01hp:hover, .stVerticalBlock.st-key-con02hp:hover {
         background-color: rgba(197,91,17,1); 
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); 
         outline: none;
         transform: translateY(-2px);
     } 
-    .stVerticalBlock.st-key-rest1container, .stVerticalBlock.st-key-rest3container {
-        background-color: rgb(197,91,17); 
-        padding: 30px; 
-        border-radius: 15px;
-    }</style>""", unsafe_allow_html=True)
+    </style>""", unsafe_allow_html=True)
     base_footer()
     return
 

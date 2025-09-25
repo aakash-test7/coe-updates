@@ -88,7 +88,7 @@ def home_page():
                 #st.rerun()
         con=st.container(border=False, key="con05hp")
         with con:
-            if st.button("SnapGene", use_container_width=True, key="navSNAP", type="primary"):
+            if st.button("Gene Map", use_container_width=True, key="navSNAP", type="primary"):
                 st.write("This feature is under development. Please check back later.")
                 #st.session_state["programmatic_nav"] = True
                 #st.session_state["current_page"] = "GO-ANALYSIS"

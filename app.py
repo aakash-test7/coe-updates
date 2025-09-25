@@ -6,7 +6,7 @@ import time
 from pages.security import basic_stats, update_visitor_count
 import individual
 
-pages = ["HOME", "SEARCH", "SPATIAL-EXPRESSION", "RNA", "miRNA-Target","TF", "PPI", "LOCALIZATION", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
+pages = ["HOME", "SEARCH", "SPATIAL-EXPRESSION", "RNA-type", "miRNA-target","TFs", "PPI", "LOCALIZATION", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
 logo_path = ("logo1.svg")
 options={"use_padding": True, "show_menu":False}
 
@@ -231,8 +231,8 @@ functions = {
     "SEARCH": pg.search_page,
     "GENE-INFO": individual.gene_info_page,
     "SPATIAL-EXPRESSION": individual.spatial_info_page,
-    "RNA": individual.rna_type_page,
-    "miRNA-Target": individual.mirna_info_page,
+    "RNA-type": individual.rna_type_page,
+    "miRNA-target": individual.mirna_info_page,
     "PPI": individual.ppi_info_page,
     "LOCALIZATION": individual.local_info_page,
     "GO-KEGG": individual.go_info_page,
@@ -242,7 +242,7 @@ functions = {
     "LOGIN": pg.login_page,
     "PRIMER": individual.primer_info_page,
     "CRISPR": individual.crispr_info_page,
-    "TF": individual.tf_info_page
+    "TFs": individual.tf_info_page
 }
 
 go_to = functions.get(st.session_state.current_page)

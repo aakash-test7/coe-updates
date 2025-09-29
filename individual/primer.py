@@ -6,8 +6,8 @@ def primer_cloning():
     col1, col2 = st.columns(2)
     with col1:
         con1 = st.container(border=True)
-        tid = con1.text_input("Enter the Gene ID: ", placeholder="e.g., Ca_00001", key="ginfo_Tid_input1").strip()
-        mtid = con1.text_input("Enter multiple Gene IDs: ", placeholder="e.g., Ca_00001, Ca_00002", key="ginfo_mTid_input2").strip()
+        tid = con1.text_input("Enter the Gene ID: ", placeholder="e.g., Ca_00001", key="primer_Tid_input1").strip()
+        mtid = con1.text_input("Enter multiple Gene IDs: ", placeholder="e.g., Ca_00001, Ca_00002", key="primer_mTid_input2").strip()
         if mtid:
             mtid_list = [item.strip() for item in mtid.replace(",", " ").split()]
             mtid_list = list(set(mtid_list))
@@ -15,8 +15,8 @@ def primer_cloning():
 
     with col2:
         con2 = st.container(border=True)
-        locid = con2.text_input("Enter the NCBI ID: ", placeholder="e.g., LOC101511858", key="ginfo_Locid_input1").strip()
-        mlocid = con2.text_input("Enter multiple NCBI IDs: ", placeholder="e.g., LOC101511858, LOC101496413", key="ginfo_mLocid_input2").strip()
+        locid = con2.text_input("Enter the NCBI ID: ", placeholder="e.g., LOC101511858", key="primer_Locid_input1").strip()
+        mlocid = con2.text_input("Enter multiple NCBI IDs: ", placeholder="e.g., LOC101511858, LOC101496413", key="primer_mLocid_input2").strip()
         if mlocid:
             mlocid_list = [item.strip() for item in mlocid.replace(",", " ").split()]
             mlocid_list = list(set(mlocid_list))
@@ -24,7 +24,7 @@ def primer_cloning():
 
     con1, con2, con3 = st.columns([2, 2, 2])
     with con2:
-        start_button = st.button("Search", use_container_width=True, key="ginfo_Searchbutton1")
+        start_button = st.button("Search", use_container_width=True, key="primer_Searchbutton1")
 
     if start_button:
         if tid:

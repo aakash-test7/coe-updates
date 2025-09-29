@@ -64,6 +64,7 @@ GO_df = read_excel_from_gcs(bucket_name, "Data/10.xlsx")
 cello_df = read_excel_from_gcs(bucket_name, "Data/13.xlsx")
 tsi_df=read_excel_from_gcs(bucket_name, "Data/12.xlsx")
 prop_df=read_excel_from_gcs(bucket_name,"Data/16.xlsx")
+tf_df=read_excel_from_gcs(bucket_name,"Data/17.xlsx")
 
 def normalize_data(data):
     return data.applymap(lambda x: np.log2(x) if x > 0 else 0)
@@ -216,9 +217,11 @@ def show_sequence_data(tid, is_multi=False):
             transcript_code = format_sequence(matching_row['Transcript Sequence'].values[0])
             gene_code = format_sequence(matching_row['Genomic Sequence'].values[0])
             promote_code = format_sequence(matching_row['Promoter Sequence'].values[0])
+            genomic_coordinates = matching_row['Genomic Coordinates'].values[0]
+
 
             # Display as code block with copy functionality
-            with st.expander("Genomic Sequence"):
+            with st.expander(f"Genomic Sequence (Genomic Coordinates - {genomic_coordinates})"):
                 st.code(gene_code, language="text")
             with st.expander("Transcript Sequence"):
                 st.code(transcript_code, language="text")
@@ -226,9 +229,8 @@ def show_sequence_data(tid, is_multi=False):
                 st.code(cds_code, language="text")
             with st.expander("Peptide Sequence"):
                 st.code(peptide_code, language="text")
-            with st.expander("Promoter Sequence"):
+            with st.expander("Promoter Sequence (Genomic Sequences 2kb upstream to the transcription start site)"):
                 st.code(promote_code, language="text")
-
             combined_file_content = (
                 f">{tid}|{tid} Genomic Sequence\n{gene_code}\n\n"
                 f">{tid}|{tid} Transcript Sequence\n{transcript_code}\n\n"
@@ -259,8 +261,9 @@ def show_sequence_data(tid, is_multi=False):
                 transcript_code = format_sequence(matching_rows['Transcript Sequence'].values[0])
                 gene_code = format_sequence(matching_rows['Genomic Sequence'].values[0])
                 promote_code = format_sequence(matching_rows['Promoter Sequence'].values[0])
+                genomic_coordinates = matching_rows['Genomic Coordinates'].values[0]
 
-                with st.expander(f"{t_id} Genomic Sequence"):
+                with st.expander(f"{t_id} Genomic Sequence (Genomic Coordinates - {genomic_coordinates})"):
                     st.code(gene_code, language="text")
                 with st.expander(f"{t_id} Transcript Sequence"):
                     st.code(transcript_code, language="text")
@@ -268,7 +271,7 @@ def show_sequence_data(tid, is_multi=False):
                     st.code(cds_code, language="text")
                 with st.expander(f"{t_id} Peptide Sequence"):
                     st.code(peptide_code, language="text")
-                with st.expander(f"{t_id} Promoter Sequence"):
+                with st.expander(f"{t_id} Promoter Sequence (Genomic Sequences 2kb upstream to the transcription start site)"):
                     st.code(promote_code, language="text")
 
                 combined_file_content = (
@@ -419,6 +422,44 @@ def show_go_kegg_data(tid, is_multi=False):
             st.dataframe(result)
             return True
         return False
+
+
+def fpkm_glossary():
+    st.write("**Key Terms and Definitions**")
+    glossary_entries = {
+        'GS - Germinating Seedling': '- The early stage of seedling development where the seed begins to sprout and grow.',
+        'S - Shoot': '- The above-ground part of the plant, including stems, leaves, and flowers.',
+        'ML - Mature Leaf': '- A fully developed leaf, which has completed its growth.',
+        'YL - Young Leaf': '- A developing leaf that has not yet reached full maturity.',
+        'Brac - Bracteole': '- A small leaf-like structure at the base of a flower or inflorescence.',
+        'R - Root': '- The part of the plant that anchors it in the soil and absorbs water and nutrients.',
+        'Rtip - Root Tip': '- The growing tip of the root, where new cells are produced.',
+        'RH - Root Hair': '- Tiny hair-like structures on the root that increase surface area for water absorption.',
+        'Nod - Nodule': '- A swollen structure on plant roots, often containing nitrogen-fixing bacteria.',
+        'SAM - Shoot Apical Meristem': '- The tissue at the tip of the shoot where growth and development occur.',
+        'FB1-FB4 - Stages of Flower Bud Development': '- Sequential stages representing the development of flower buds.',
+        'FL1-FL5 - Stages of Flower Development': '- Sequential stages representing the development of flowers.',
+        'Cal - Calyx': '- The outermost whorl of a flower, usually consisting of sepals.',
+        'Cor - Corolla': '- The petals of a flower, collectively forming the corolla.',
+        'And - Androecium': '- The male reproductive part of the flower, consisting of stamens.',
+        'Gyn - Gynoecium': '- The female reproductive part of the flower, consisting of pistils.',
+        'Pedi - Pedicel': '- The stalk that supports a flower or an inflorescence.',
+        'Emb - Embryo': '- The early stage of development of a plant from the fertilized egg cell.',
+        'Endo - Endosperm': '- The tissue that provides nourishment to the developing embryo in seeds.',
+        'SdCt - Seed Coat': '- The outer protective layer of a seed.',
+        'PodSh - Podshell': '- The outer casing that surrounds the seeds within a pod.',
+        '5DAP - Seed 5 Days After Pollination': '- The developmental stage of seed five days after pollination.',
+        '10DAP - Seed 10 Days After Pollination': '- The developmental stage of seed ten days after pollination.',
+        '20DAP - Seed 20 Days After Pollination': '- The developmental stage of seed twenty days after pollination.',
+        '30DAP - Seed 30 Days After Pollination': '- The developmental stage of seed thirty days after pollination.',
+    }
+
+    con=st.container(border=True)
+    with con:
+        for term, definition in glossary_entries.items():
+            with st.expander(term):
+                st.write(definition)
+    return
 
 def show_fpkm_matrix(tid, is_multi=False):
     """Display FPKM matrix atlas data for transcript ID(s)."""
@@ -658,6 +699,7 @@ def transcriptid_info(tid):
             with con:
                 st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
                 show_fpkm_matrix(tid)
+                fpkm_glossary()
 
             con=st.container(border=True)
             with con:
@@ -727,6 +769,7 @@ def multi_transcriptid_info(mtid):
         with con:
             st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
             show_fpkm_matrix(found_ids, is_multi=True)
+            fpkm_glossary()
 
         con=st.container(border=True)
         with con:

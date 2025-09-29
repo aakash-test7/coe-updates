@@ -11,13 +11,13 @@ def home_page():
     with col1:
         con=st.container(border=False, key="con101hp")
         with con:
-            if st.button("BROWSE", use_container_width=True, key="navBrowse", type="primary"):
+            if st.button("Browse", use_container_width=True, key="navBrowse", type="primary"):
                 st.session_state["programmatic_nav"] = True
                 st.session_state["current_page"] = "GENE-INFO"
                 st.rerun()
         con=st.container(border=False, key="con102hp")
         with con:
-            if st.button("PRIMER Design", use_container_width=True, key="navPrimer", type="primary"):
+            if st.button("Primer Design", use_container_width=True, key="navPrimer", type="primary"):
                 st.session_state["programmatic_nav"] = True
                 st.session_state["current_page"] = "PRIMER"
                 st.rerun()
@@ -142,7 +142,7 @@ def search_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
     if st.session_state.get('authenticated', False):
         username = st.session_state.get('username')
-    header_styled("Search", "Enter single Gene ID/NCBI ID or multiple Gene IDs in the Chick Pea Omics Explorer. The search is case sensitive. For example, entering Ca_00001 will provide detailed information including genomic sequence, transcript sequence, CDS, peptide sequence, promoter sequence, biochemical properties, protein-protein interaction, cellular localization, Gene Ontology and KEGG analysis, SNP calling, lncRNA, miRNA targets, orthologs/paralogs, and protein model prediction.")
+    header_styled("Search", "Users can get detailed genomic information by inserting Phytozome/NCBI gene IDs. The search is case sensitive. For example, entering Ca_00001 will provide detailed information including genomic sequence, transcript sequence, CDS, peptide sequence, promoter sequence, biochemical properties, protein-protein interaction, cellular localization, Gene Ontology and KEGG analysis, SNP calling, lncRNA, miRNA targets, transcription factors, orthologs/paralogs, and protein model prediction.")
     col1, col2 = st.columns(2)
 
     with col1:

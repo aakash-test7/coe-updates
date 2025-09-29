@@ -1,128 +1,130 @@
 import streamlit as st
-from backend import process_locid, process_mlocid, df, show_sequence_data_g_p, mlocid_error,header_styled
+import pandas as pd
+from backend import process_locid, process_mlocid, mlocid_error,header_styled,df,tf_df
 from pages.footer import base_footer
 
+def process_tid(tid, df):
+    result = df[df['Transcript id'] == tid]
+    if not result.empty:
+        loc_id = result.iloc[0]['LOC ID']
+        st.write(f"LOC ID for Transcript id {tid} is {loc_id}")
+        return loc_id
+    else:
+        return None
+
+def process_mtid(mtid, df):
+    mtid_list = [item.strip() for item in mtid.replace(",", " ").split()]
+    mtid_list = list(set(mtid_list))  # remove duplicates
+
+    loc_ids = []
+    for tid in mtid_list:
+        loc_id = process_tid(tid, df)
+        if loc_id:
+            loc_ids.append(loc_id)
+
+    result = ",".join(loc_ids)
+    return result
+
+def show_tf_info(tid, is_multi=False):
+    """Display Transcription Factor info for Transcript ID(s) by matching Gene_ID in tf_df."""
+    
+    # Single input: Process a single Transcript ID
+    if not is_multi:
+        gene_id = process_tid(tid, df)
+        
+        if gene_id:  # If Gene ID was found for the given Transcript ID
+            tf_matching_row = tf_df[tf_df['Gene_ID'] == gene_id]
+            
+            if not tf_matching_row.empty:
+                st.dataframe(tf_matching_row[['TF_ID', 'Gene_ID', 'Family']])
+                st.write("\n")
+                return True
+            else:
+                st.write(f"No match found for Gene ID: {gene_id} in Transcription Factor Data\n")
+                return False
+        else:
+            st.write(f"No Gene ID found for Transcript ID: {tid}")
+            return False
+    
+    # Multiple input: Process multiple Transcript IDs
+    else:
+        result = pd.DataFrame()
+        
+        # Process each Transcript ID in the list
+        for t_id in tid:
+            gene_id = process_tid(t_id, df)
+            
+            if gene_id:  # If Gene ID was found for the given Transcript ID
+                tf_matching_row = tf_df[tf_df['Gene_ID'] == gene_id]
+                
+                if not tf_matching_row.empty:
+                    temp_result = tf_matching_row[['TF_ID', 'Gene_ID', 'Family']]
+                    result = pd.concat([result, temp_result], ignore_index=True)
+        
+        if not result.empty:
+            result = result.drop_duplicates(subset=['Gene_ID'])
+            st.dataframe(result)
+            return True
+        else:
+            st.write("No matches found in Transcription Factor data for the given Gene IDs.")
+            return False
 def tf_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    #st.title("PRIMER Design and Information")
-    #st.write("""<p><b>Enter the Gene ID or NCBI ID to fetch the target sequence and then paste the nucleotide sequence in the Primer design Template section and get the set of primers just clicking Pick primers.</b></p>,""", unsafe_allow_html=True)
-    header_styled("Transcription Factors", "It provides detailed information about transcription factors binding to the selected gene.")
+    
     col1, col2 = st.columns(2)
 
     with col1:
-        con1 = st.container(border=True)
-        tid = con1.text_input("Enter the Gene ID: ", placeholder="e.g., Ca_00001", key="ginfo_Tid_input1").strip()
-        mtid = con1.text_input("Enter multiple Gene IDs: ", placeholder="e.g., Ca_00001, Ca_00002", key="ginfo_mTid_input2").strip()
-        if mtid:
-            mtid_list = [item.strip() for item in mtid.replace(",", " ").split()]
-            mtid_list = list(set(mtid_list))
-            mtid = ",".join(mtid_list)
+        con1 = st.container()
+        tid = con1.text_input("Enter the Gene ID: ", placeholder="e.g., Ca_00001", key="tf_Tid_input1").strip()
+        mtid = con1.text_input("Enter multiple Gene IDs: ", placeholder="e.g., Ca_00001, Ca_00002", key="tf_mTid_input2").strip()
 
     with col2:
-        con2 = st.container(border=True)
-        locid = con2.text_input("Enter the NCBI ID: ", placeholder="e.g., LOC101511858", key="ginfo_Locid_input1").strip()
-        mlocid = con2.text_input("Enter multiple NCBI IDs: ", placeholder="e.g., LOC101511858, LOC101496413", key="ginfo_mLocid_input2").strip()
-        if mlocid:
-            mlocid_list = [item.strip() for item in mlocid.replace(",", " ").split()]
-            mlocid_list = list(set(mlocid_list))
-            mlocid = ",".join(mlocid_list)
+        con2 = st.container()
+        locid = con2.text_input("Enter the NCBI ID: ", placeholder="e.g., LOC101511858", key="tf_Locid_input1").strip()
+        mlocid = con2.text_input("Enter multiple NCBI IDs: ", placeholder="e.g., LOC101511858, LOC101496413", key="tf_mLocid_input2").strip()
 
     con1, con2, con3 = st.columns([2, 2, 2])
     with con2:
-        start_button = st.button("Search", use_container_width=True, key="ginfo_Searchbutton1")
+        start_button = st.button("Search", use_container_width=True, key="tf_Searchbutton1")
 
     if start_button:
         if tid:
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
+            st.subheader("Transcription Factor Information")
+            show_tf_info(tid, is_multi=False)
+            with st.expander("Transcription Factors", expanded=True):
+                st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
-                if not matching_row.empty:
-                    con=st.container(border=True)
-                    with con:
-                        st.subheader("Sequence data")
-                        show_sequence_data_g_p(tid)
-
-                        with st.expander("Transcription Factors", expanded=True):
-                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
-
-                else:
-                    st.error(f"No match found for Gene ID: {tid}")
-
-            st.toast("Task completed successfully.")
-            
         elif mtid:
             mtid_list = [tid.strip() for tid in mtid.replace(",", " ").split()]
-            mtid_list.sort()
-
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                found_ids = matching_rows['Transcript id'].unique().tolist()
-                not_found_ids = [x for x in mtid_list if x not in found_ids]
-
-                if not matching_rows.empty:
-                    con = st.container(border=True)
-                    with con:
-                        st.subheader("\nSequences data")
-                        show_sequence_data_g_p(mtid_list, is_multi=True)
-
-                        with st.expander("Transcription Factors", expanded=True):
-                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+            st.subheader("Transcription Factor Information")
+            show_tf_info(mtid_list, is_multi=True)
+            with st.expander("Transcription Factors", expanded=True):
+                st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
 
-                if not_found_ids:
-                    st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
-
-            st.toast("Task completed successfully.")
-            
         elif locid:
             tid = process_locid(locid)
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
-
-                if not matching_row.empty:
-                    con=st.container(border=True)
-                    with con:
-                        st.subheader("Sequence data")
-                        show_sequence_data_g_p(tid)
-
-                        with st.expander("Transcription Factors", expanded=True):
-                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+            if tid:
+                st.subheader("Transcription Factor Information")
+                show_tf_info(tid, is_multi=False)
+                with st.expander("Transcription Factors", expanded=True):
+                    st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
 
-                else:
-                    st.error(f"No match found for NCBI ID: {locid}")
-            
-            st.toast("Task completed successfully.")
-            
         elif mlocid:
             available, rejected = mlocid_error(mlocid)
             if available:
                 mtid = process_mlocid(",".join(available))
                 mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
-                mtid_list.sort()
-                if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                    matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                    if not matching_rows.empty:
-                        con = st.container(border=True)
-                        with con:
-                            st.subheader("\nSequences data")
-                            show_sequence_data_g_p(mtid_list, is_multi=True)
-
-                            with st.expander("Transcription Factors", expanded=True):
-                                st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+                st.subheader("Transcription Factor Information")
+                show_tf_info(mtid_list, is_multi=True)
+                with st.expander("Transcription Factors", expanded=True):
+                    st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
 
-                st.toast("Task completed successfully.")
-            if rejected:
-                st.error(f"No matches found for NCBI IDs: {', '.join(rejected)}")
-
-            st.toast("Task completed successfully.")
-            
-    elif tid == "":
-        st.warning("Need Gene ID to proceed.")
+        st.toast("Task completed successfully.")
     else:
         st.write("Press the 'Search' button to begin ...")
-        st.write("Follow the instructions or check out tutorials")
 
     base_footer()
     return

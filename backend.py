@@ -452,7 +452,7 @@ def fpkm_glossary():
         '30DAP - Seed 30 Days After Pollination': 'The developmental stage of seed thirty days after pollination.',
     }
 
-    with st.expander("Key Terms and Definitions", expanded=False):
+    with st.expander("Key Terms and Definitions", expanded=True):
         c1, c2, c3 = st.columns(3)
 
         columns = [c1, c2, c3]
@@ -668,6 +668,82 @@ def show_inparalogs_data(tid, is_multi=False):
                     st.write(f"No match found for Gene id: {t_id} in Inparalogs data\n")    
 
         return True
+    return
+
+def process_tid(tid, df):
+    result = df[df['Transcript id'] == tid]
+    if not result.empty:
+        loc_id = result.iloc[0]['LOC ID']
+        st.write(f"LOC ID for Transcript id {tid} is {loc_id}")
+        return loc_id
+    else:
+        return None
+
+def show_tf_info(tid, is_multi=False):
+    """Display Transcription Factor info for Transcript ID(s) by matching Gene_ID in tf_df."""
+    
+    # Single input: Process a single Transcript ID
+    if not is_multi:
+        gene_id = process_tid(tid, df)
+        
+        if gene_id:  # If Gene ID was found for the given Transcript ID
+            tf_matching_row = tf_df[tf_df['Gene_ID'] == gene_id]
+            
+            if not tf_matching_row.empty:
+                st.dataframe(tf_matching_row[['TF_ID', 'Gene_ID', 'Family']])
+                
+                # Extract TF_ID values to display below with iframe
+                tf_ids = tf_matching_row['TF_ID'].tolist()
+                
+                # Display each TF_ID with iframe
+                for tf_id in tf_ids:
+                    st.subheader(f"Transcription Factor: {tf_id}")
+                    iframe_url = f"https://planttfdb.gao-lab.org/tf.php?sp=Car&did={tf_id}"
+                    st.markdown(f"""<div style='display: flex; justify-content: center;'><iframe src="{iframe_url}" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+
+                st.write("\n")
+                return True
+            else:
+                st.write(f"No match found for Gene ID: {gene_id} in Transcription Factor Data\n")
+                return False
+        else:
+            st.write(f"No Gene ID found for Transcript ID: {tid}")
+            return False
+    
+    # Multiple input: Process multiple Transcript IDs
+    else:
+        result = pd.DataFrame()
+        
+        # Process each Transcript ID in the list
+        for t_id in tid:
+            gene_id = process_tid(t_id, df)
+            
+            if gene_id:  # If Gene ID was found for the given Transcript ID
+                tf_matching_row = tf_df[tf_df['Gene_ID'] == gene_id]
+                
+                if not tf_matching_row.empty:
+                    temp_result = tf_matching_row[['TF_ID', 'Gene_ID', 'Family']]
+                    result = pd.concat([result, temp_result], ignore_index=True)
+        
+        if not result.empty:
+            result = result.drop_duplicates(subset=['Gene_ID'])
+            st.dataframe(result)
+            
+            # Extract TF_ID values to display below with iframe
+            tf_ids = result['TF_ID'].tolist()
+            
+            # Display each TF_ID with iframe
+            for tf_id in tf_ids:
+                st.subheader(f"Transcription Factor: {tf_id}")
+                iframe_url = f"https://planttfdb.gao-lab.org/tf.php?sp=Car&did={tf_id}"
+                st.markdown(f"""<div style='display: flex; justify-content: center;'><iframe src="{iframe_url}" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+
+            return True
+        else:
+            st.write("No matches found in Transcription Factor data for the given Gene IDs.")
+            return False
+
+
 def transcriptid_info(tid):
     if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
         matching_row = df[df['Transcript id'] == tid]
@@ -719,6 +795,11 @@ def transcriptid_info(tid):
 
                 st.subheader("miRNA Target")
                 show_mirna_data(tid)
+
+            con=st.container(border=True)
+            with con:
+                st.subheader("Transcription Factor")
+                show_tf_info(tid)
 
             con=st.container(border=True)
             with con:
@@ -787,6 +868,11 @@ def multi_transcriptid_info(mtid):
             show_lncrna_data(found_ids, is_multi=True)
             st.subheader("miRNA Target")
             show_mirna_data(found_ids, is_multi=True)
+
+        con=st.container(border=True)
+        with con:
+            st.subheader("Transcription Factor")
+            show_tf_info(found_ids, is_multi=True)
 
         con=st.container(border=True)
         with con:

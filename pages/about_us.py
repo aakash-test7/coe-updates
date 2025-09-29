@@ -246,7 +246,7 @@ def meta_data_page():
         st.write("")
 
     with col4:
-        st.image(get_image_url("Images5.png"), caption="WGCNA Heatmaps", use_container_width=True)
+        st.image(get_image_url("Images/5.png"), caption="WGCNA Heatmaps", use_container_width=True)
         st.write("")
 
     col5, col6 = st.columns(2)

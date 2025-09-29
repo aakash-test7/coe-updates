@@ -1,5 +1,5 @@
 import streamlit as st
-from backend import process_locid, process_mlocid, df, show_fpkm_matrix, mlocid_error,header_styled
+from backend import process_locid, process_mlocid, df, show_fpkm_matrix, mlocid_error,header_styled, fpkm_glossary
 from pages.footer import base_footer
 
 def spatial_info_page():
@@ -47,6 +47,7 @@ def spatial_info_page():
                     with con:
                         st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
                         show_fpkm_matrix(tid)
+                        fpkm_glossary()
                 else:
                     st.error(f"No match found for Gene ID: {tid}")
 
@@ -67,6 +68,7 @@ def spatial_info_page():
                     with con:
                         st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
                         show_fpkm_matrix(mtid_list, is_multi=True)
+                        fpkm_glossary()
                 if not_found_ids:
                     st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
 
@@ -82,6 +84,7 @@ def spatial_info_page():
                     with con:
                         st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
                         show_fpkm_matrix(tid)
+                        fpkm_glossary()
                 else:
                     st.error(f"No match found for NCBI ID: {locid}")
             st.toast("Task completed successfully.")
@@ -100,6 +103,7 @@ def spatial_info_page():
                         with con:
                             st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
                             show_fpkm_matrix(mtid_list, is_multi=True)
+                            fpkm_glossary()
                 st.toast("Task completed successfully.")
 
             if rejected:

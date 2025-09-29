@@ -423,42 +423,45 @@ def show_go_kegg_data(tid, is_multi=False):
             return True
         return False
 
-
 def fpkm_glossary():
-    st.write("**Key Terms and Definitions**")
     glossary_entries = {
-        'GS - Germinating Seedling': '- The early stage of seedling development where the seed begins to sprout and grow.',
-        'S - Shoot': '- The above-ground part of the plant, including stems, leaves, and flowers.',
-        'ML - Mature Leaf': '- A fully developed leaf, which has completed its growth.',
-        'YL - Young Leaf': '- A developing leaf that has not yet reached full maturity.',
-        'Brac - Bracteole': '- A small leaf-like structure at the base of a flower or inflorescence.',
-        'R - Root': '- The part of the plant that anchors it in the soil and absorbs water and nutrients.',
-        'Rtip - Root Tip': '- The growing tip of the root, where new cells are produced.',
-        'RH - Root Hair': '- Tiny hair-like structures on the root that increase surface area for water absorption.',
-        'Nod - Nodule': '- A swollen structure on plant roots, often containing nitrogen-fixing bacteria.',
-        'SAM - Shoot Apical Meristem': '- The tissue at the tip of the shoot where growth and development occur.',
-        'FB1-FB4 - Stages of Flower Bud Development': '- Sequential stages representing the development of flower buds.',
-        'FL1-FL5 - Stages of Flower Development': '- Sequential stages representing the development of flowers.',
-        'Cal - Calyx': '- The outermost whorl of a flower, usually consisting of sepals.',
-        'Cor - Corolla': '- The petals of a flower, collectively forming the corolla.',
-        'And - Androecium': '- The male reproductive part of the flower, consisting of stamens.',
-        'Gyn - Gynoecium': '- The female reproductive part of the flower, consisting of pistils.',
-        'Pedi - Pedicel': '- The stalk that supports a flower or an inflorescence.',
-        'Emb - Embryo': '- The early stage of development of a plant from the fertilized egg cell.',
-        'Endo - Endosperm': '- The tissue that provides nourishment to the developing embryo in seeds.',
-        'SdCt - Seed Coat': '- The outer protective layer of a seed.',
-        'PodSh - Podshell': '- The outer casing that surrounds the seeds within a pod.',
-        '5DAP - Seed 5 Days After Pollination': '- The developmental stage of seed five days after pollination.',
-        '10DAP - Seed 10 Days After Pollination': '- The developmental stage of seed ten days after pollination.',
-        '20DAP - Seed 20 Days After Pollination': '- The developmental stage of seed twenty days after pollination.',
-        '30DAP - Seed 30 Days After Pollination': '- The developmental stage of seed thirty days after pollination.',
+        'GS - Germinating Seedling': 'The early stage of seedling development where the seed begins to sprout and grow.',
+        'S - Shoot': 'The above-ground part of the plant, including stems, leaves, and flowers.',
+        'ML - Mature Leaf': 'A fully developed leaf, which has completed its growth.',
+        'YL - Young Leaf': 'A developing leaf that has not yet reached full maturity.',
+        'Brac - Bracteole': 'A small leaf-like structure at the base of a flower or inflorescence.',
+        'R - Root': 'The part of the plant that anchors it in the soil and absorbs water and nutrients.',
+        'Rtip - Root Tip': 'The growing tip of the root, where new cells are produced.',
+        'RH - Root Hair': 'Tiny hair-like structures on the root that increase surface area for water absorption.',
+        'Nod - Nodule': 'A swollen structure on plant roots, often containing nitrogen-fixing bacteria.',
+        'SAM - Shoot Apical Meristem': 'The tissue at the tip of the shoot where growth and development occur.',
+        'FB1-FB4 - Stages of Flower Bud Development': 'Sequential stages representing the development of flower buds.',
+        'FL1-FL5 - Stages of Flower Development': 'Sequential stages representing the development of flowers.',
+        'Cal - Calyx': 'The outermost whorl of a flower, usually consisting of sepals.',
+        'Cor - Corolla': 'The petals of a flower, collectively forming the corolla.',
+        'And - Androecium': 'The male reproductive part of the flower, consisting of stamens.',
+        'Gyn - Gynoecium': 'The female reproductive part of the flower, consisting of pistils.',
+        'Pedi - Pedicel': 'The stalk that supports a flower or an inflorescence.',
+        'Emb - Embryo': 'The early stage of development of a plant from the fertilized egg cell.',
+        'Endo - Endosperm': 'The tissue that provides nourishment to the developing embryo in seeds.',
+        'SdCt - Seed Coat': 'The outer protective layer of a seed.',
+        'PodSh - Podshell': 'The outer casing that surrounds the seeds within a pod.',
+        '5DAP - Seed 5 Days After Pollination': 'The developmental stage of seed five days after pollination.',
+        '10DAP - Seed 10 Days After Pollination': 'The developmental stage of seed ten days after pollination.',
+        '20DAP - Seed 20 Days After Pollination': 'The developmental stage of seed twenty days after pollination.',
+        '30DAP - Seed 30 Days After Pollination': 'The developmental stage of seed thirty days after pollination.',
     }
 
-    con=st.container(border=True)
-    with con:
-        for term, definition in glossary_entries.items():
-            with st.expander(term):
-                st.write(definition)
+    with st.expander("Key Terms and Definitions", expanded=False):
+        c1, c2, c3 = st.columns(3)
+
+        columns = [c1, c2, c3]
+
+        for i, (term, definition) in enumerate(glossary_entries.items()):
+            col = columns[i % 3]
+            with col:
+                with st.popover(term, use_container_width=True):
+                    st.write(definition)
     return
 
 def show_fpkm_matrix(tid, is_multi=False):

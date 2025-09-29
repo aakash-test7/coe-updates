@@ -6,7 +6,7 @@ def spatial_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
     #st.title("Spatial Expression Search")
     #st.write("**It provides the information about the temporal expression among 32 different developmental stages**")
-    header_styled("Spatial Expression Search", "It provides the information about the temporal expression among 32 different developmental stages")
+    header_styled("Tissue Specific Expression Search", "It provides the information about the temporal expression among 32 different developmental stages")
     col1, col2 = st.columns(2)
 
     with col1:

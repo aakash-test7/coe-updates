@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from backend import process_locid, process_mlocid, mlocid_error,header_styled,df,tf_df
+from backend import process_locid, process_mlocid, mlocid_error, header_styled, df, tf_df
 from pages.footer import base_footer
 
 def process_tid(tid, df):
@@ -26,10 +26,7 @@ def process_mtid(mtid, df):
     return result
 
 def show_tf_info(tid, is_multi=False):
-    st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    #st.title("PRIMER Design and Information")
-    #st.write("""<p><b>Enter the Gene ID or NCBI ID to fetch the target sequence and then paste the nucleotide sequence in the Primer design Template section and get the set of primers just clicking Pick primers.</b></p>,""", unsafe_allow_html=True)
-    header_styled("Transcription Factors", "It provides detailed information about transcription factors binding to the selected gene.")
+    """Display Transcription Factor info for Transcript ID(s) by matching Gene_ID in tf_df."""
     
     # Single input: Process a single Transcript ID
     if not is_multi:
@@ -40,6 +37,16 @@ def show_tf_info(tid, is_multi=False):
             
             if not tf_matching_row.empty:
                 st.dataframe(tf_matching_row[['TF_ID', 'Gene_ID', 'Family']])
+                
+                # Extract TF_ID values to display below with iframe
+                tf_ids = tf_matching_row['TF_ID'].tolist()
+                
+                # Display each TF_ID with iframe
+                for tf_id in tf_ids:
+                    st.subheader(f"Transcription Factor: {tf_id}")
+                    iframe_url = f"https://planttfdb.gao-lab.org/tf.php?sp=Car&did={tf_id}"
+                    st.markdown(f"""<div style='display: flex; justify-content: center;'><iframe src="{iframe_url}" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+
                 st.write("\n")
                 return True
             else:
@@ -67,22 +74,34 @@ def show_tf_info(tid, is_multi=False):
         if not result.empty:
             result = result.drop_duplicates(subset=['Gene_ID'])
             st.dataframe(result)
+            
+            # Extract TF_ID values to display below with iframe
+            tf_ids = result['TF_ID'].tolist()
+            
+            # Display each TF_ID with iframe
+            for tf_id in tf_ids:
+                st.subheader(f"Transcription Factor: {tf_id}")
+                iframe_url = f"https://planttfdb.gao-lab.org/tf.php?sp=Car&did={tf_id}"
+                st.markdown(f"""<div style='display: flex; justify-content: center;'><iframe src="{iframe_url}" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+
             return True
         else:
             st.write("No matches found in Transcription Factor data for the given Gene IDs.")
             return False
+
 def tf_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    header_styled("Transcription Factors", "It provides detailed information about transcription factors binding to the selected gene.")
     
     col1, col2 = st.columns(2)
 
     with col1:
-        con1 = st.container()
+        con1 = st.container(border=True)
         tid = con1.text_input("Enter the Gene ID: ", placeholder="e.g., Ca_00001", key="tf_Tid_input1").strip()
         mtid = con1.text_input("Enter multiple Gene IDs: ", placeholder="e.g., Ca_00001, Ca_00002", key="tf_mTid_input2").strip()
 
     with col2:
-        con2 = st.container()
+        con2 = st.container(border=True)
         locid = con2.text_input("Enter the NCBI ID: ", placeholder="e.g., LOC101511858", key="tf_Locid_input1").strip()
         mlocid = con2.text_input("Enter multiple NCBI IDs: ", placeholder="e.g., LOC101511858, LOC101496413", key="tf_mLocid_input2").strip()
 
@@ -94,25 +113,17 @@ def tf_info_page():
         if tid:
             st.subheader("Transcription Factor Information")
             show_tf_info(tid, is_multi=False)
-            with st.expander("Transcription Factors", expanded=True):
-                st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
         elif mtid:
             mtid_list = [tid.strip() for tid in mtid.replace(",", " ").split()]
             st.subheader("Transcription Factor Information")
             show_tf_info(mtid_list, is_multi=True)
-            with st.expander("Transcription Factors", expanded=True):
-                st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
-
 
         elif locid:
             tid = process_locid(locid)
             if tid:
                 st.subheader("Transcription Factor Information")
                 show_tf_info(tid, is_multi=False)
-                with st.expander("Transcription Factors", expanded=True):
-                    st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
-
 
         elif mlocid:
             available, rejected = mlocid_error(mlocid)
@@ -121,16 +132,12 @@ def tf_info_page():
                 mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
                 st.subheader("Transcription Factor Information")
                 show_tf_info(mtid_list, is_multi=True)
-                with st.expander("Transcription Factors", expanded=True):
-                    st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://planttfdb.gao-lab.org/index.php?sp=Car" width="1000" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
-
 
         st.toast("Task completed successfully.")
     else:
         st.write("Press the 'Search' button to begin ...")
 
     base_footer()
-    return
 
 if __name__ == "__main__":
     tf_info_page()

@@ -6,7 +6,7 @@ import time
 from pages.security import basic_stats, update_visitor_count
 import individual
 
-pages = ["HOME", "SEARCH", "Tissue-wise EXPRESSION", "RNA-type", "miRNA-target","Transcription Factors", "PPI", "LOCALIZATION", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
+pages = ["HOME", "SEARCH", "Tissue-Specific Expression", "RNA-type", "miRNA-target","Transcription Factors", "PPI", "Localization", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
 logo_path = ("logo1.svg")
 options={"use_padding": True, "show_menu":False}
 
@@ -84,19 +84,20 @@ else:
             st.session_state.last_navbar_page = page
 
 external_links = {
-    "Cassavabase": "https://www.cassavabase.org",
+    "Legume Information System": "https://www.legumeinfo.org/",
+    "Pulse Crop Database": "https://www.pulsedb.org/main",
+    "Legumepedia":"https://cegresources.icrisat.org/legumepedia/index.php",
+    "Phytozome": "https://phytozome-next.jgi.doe.gov/",
+    "NCBI": "https://www.ncbi.nlm.nih.gov/",
     "Ensemble Plants": "https://plants.ensembl.org/index.html",
+    "SoyBase": "https://www.soybase.org/",
     "Gramene": "https://www.gramene.org/",
     "GrainGenes": "https://wheat.pw.usda.gov/",
-    "Legume Information System": "https://www.legumeinfo.org/",
-    "Legumepedia":"https://cegresources.icrisat.org/legumepedia/index.php",
     "MaizeGDB": "https://www.maizegdb.org/",
-    "NCBI": "https://www.ncbi.nlm.nih.gov/",
-    "Phytozome": "https://phytozome-next.jgi.doe.gov/",
-    "Pulse Crop Database": "https://www.pulsedb.org/main",
     "Rice Database": "https://shigen.nig.ac.jp/rice/oryzabase/locale/change?lang=en",
-    "SoyBase": "https://www.soybase.org/",
-    "TAIR": "https://www.arabidopsis.org"}
+    "TAIR": "https://www.arabidopsis.org",
+    "Cassavabase": "https://www.cassavabase.org",
+}
 
 from backend import img_to_base64
 with open("logo1.png", "rb") as img_file:
@@ -231,11 +232,11 @@ functions = {
     "HOME": pg.home_page,
     "SEARCH": pg.search_page,
     "GENE-INFO": individual.gene_info_page,
-    "Tissue-wise EXPRESSION": individual.spatial_info_page,
+    "Tissue-Specific Expression": individual.spatial_info_page,
     "RNA-type": individual.rna_type_page,
     "miRNA-target": individual.mirna_info_page,
     "PPI": individual.ppi_info_page,
-    "LOCALIZATION": individual.local_info_page,
+    "Localization": individual.local_info_page,
     "GO-KEGG": individual.go_info_page,
     "SNP-CALLING": individual.snp_info_page,
     "ORTHOLOGS/PARALOGS": individual.orthologs_info_page,

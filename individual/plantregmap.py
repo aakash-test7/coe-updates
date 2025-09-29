@@ -26,7 +26,10 @@ def process_mtid(mtid, df):
     return result
 
 def show_tf_info(tid, is_multi=False):
-    """Display Transcription Factor info for Transcript ID(s) by matching Gene_ID in tf_df."""
+    st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    #st.title("PRIMER Design and Information")
+    #st.write("""<p><b>Enter the Gene ID or NCBI ID to fetch the target sequence and then paste the nucleotide sequence in the Primer design Template section and get the set of primers just clicking Pick primers.</b></p>,""", unsafe_allow_html=True)
+    header_styled("Transcription Factors", "It provides detailed information about transcription factors binding to the selected gene.")
     
     # Single input: Process a single Transcript ID
     if not is_multi:

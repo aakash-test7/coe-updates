@@ -999,7 +999,6 @@ def perf_chart(selected_tissues):
     else:
         colors = [col(tissue) for tissue in selected_tissues]
         st.bar_chart(filtered_df.T, height=400, color=colors,stack=False,x_label='Metrics', y_label='Accuracy/Score')
-
 def svm_charts():
     data = {"Tissue/Stages/File": ["Seed Tissues", "Green Tissues", "Root Tissues", "Flower Development Stages", "Flower Parts"],
         "Training Accuracy": [0.9457962198566152, 0.9669780577883988, 0.9564414512274604, 0.9459048446665218, 0.9404736041711927],
@@ -1011,6 +1010,7 @@ def svm_charts():
     df.set_index("Tissue/Stages/File", inplace=True)
 
     st.title("Model Performance Analysis")
+    st.write("The following section presents the performance analysis of the integrated machine learning model, showcasing key metrics such as training and test accuracy across various tissue-specific super-classes. Additionally, visualizations are provided to illustrate the effects of different kernel functions and hyperparameter optimization techniques on the model's performance.")
     con9=st.container(border=True)
     with con9:
         col1,col2,col3=st.columns([1,2,1])
@@ -1067,6 +1067,8 @@ def svm_charts():
 def tsi_plot():
     df = tsi_df
     st.title("Tissue Specificity Index (TSI) Analysis")
+    st.write("It is a measure used to quantify how specifically a gene is expressed in a particular tissue compared to other tissues. It ranges from 0 to 1, where a TSI value of 1 indicates that the gene is expressed exclusively in one tissue, while a TSI value of 0 indicates that the gene is uniformly expressed across all tissues.")
+
     con=st.container(border=True)
     with con:
         con=st.container(border=True)

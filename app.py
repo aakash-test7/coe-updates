@@ -6,7 +6,7 @@ import time
 from pages.security import basic_stats, update_visitor_count
 import individual
 
-pages = ["HOME", "SEARCH", "Tissue-Specific Expression", "RNA-type", "miRNA-target","Transcription Factors", "PPI", "Localization", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
+pages = ["HOME", "SEARCH", "Tissue Specific Expression", "RNA-type", "miRNA-target","Transcription Factors", "PPI", "Localization", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
 logo_path = ("logo1.svg")
 options={"use_padding": True, "show_menu":False}
 
@@ -232,7 +232,7 @@ functions = {
     "HOME": pg.home_page,
     "SEARCH": pg.search_page,
     "GENE-INFO": individual.gene_info_page,
-    "Tissue-Specific Expression": individual.spatial_info_page,
+    "Tissue Specific Expression": individual.spatial_info_page,
     "RNA-type": individual.rna_type_page,
     "miRNA-target": individual.mirna_info_page,
     "PPI": individual.ppi_info_page,

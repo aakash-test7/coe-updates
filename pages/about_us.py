@@ -1,11 +1,10 @@
 import requests
 import streamlit as st
-from backend import generate_signed_url, img_to_base64, svm_charts, tsi_plot
+from backend import generate_signed_url, img_to_base64, svm_charts, tsi_plot, header_styled
 from pages.footer import base_footer
-from streamlit.components.v1 import html
 
 def citations_page():
-    st.title("Citations")
+    header_styled("Citations","Citations for Supporting Data, Algorithms, and Tools Utilized in the ChickpeaOmicsExplorer")
     con = st.container(border=True)
     con.write("### Orthologous analysis:")
     con.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/") 
@@ -87,8 +86,9 @@ def citations_page():
     return
 
 def glossary_page():
-    st.title("Glossary")
-    st.write("**Key Terms and Definitions**")
+    header_styled("Glossary","Key Terms and Definitions")
+    #st.title("Glossary")
+    #st.write("**Key Terms and Definitions**")
     glossary_entries = {
         'GS - Germinating Seedling': '- The early stage of seedling development where the seed begins to sprout and grow.',
         'S - Shoot': '- The above-ground part of the plant, including stems, leaves, and flowers.',
@@ -153,66 +153,125 @@ def get_image_url(image_path):
     return generate_signed_url(image_path)
 
 def meta_data_page():
-    st.title("Statistical Insights")
-    st.write("**Key Insights and Analytics from the Application Backend**")
-
+    #st.title("Statistical Insights")
+    #st.write("**Key Insights and Analytics from the Application Backend**")
+    header_styled("Statistical Insights","Key Insights and Analytics from the Application Backend")
     # Call charts (no caching needed for these)
     svm_charts()
+    con=st.container(border=True)
+    # Create 2x2 symmetric layout
+    row1_col1, row1_col2 = con.columns(2)
+    row2_col1, row2_col2 = con.columns(2)
+    
+    # Top-left: Text/Subheader
+    with row1_col1:
+        st.subheader("Initial Voting Classifier Results")
+        st.write("Performance metrics for the initial voting classifier model including confusion matrix, precision/recall scores, and ROC-AUC curve analysis.")
+        
+        st.write("**Key Metrics:**")
+        st.write("• **Confusion Matrix**: Shows true vs predicted classifications")
+        st.write("• **Precision**: True positives / (True positives + False positives)")
+        st.write("• **Recall**: True positives / (True positives + False negatives)")
+        st.write("• **F1-Score**: Harmonic mean of precision and recall")
+        st.write("• **ROC-AUC**: Area under the receiver operating characteristic curve")
+        
+        st.write("**Model Performance:**")
+        st.write("The voting classifier combines multiple base estimators to improve prediction accuracy and robustness.")
+    
+    # Top-right: First image
+    with row1_col2:
+        st.image(get_image_url("Images/11.png"), caption="Confusion Matrix", use_container_width=True)
+    
+    # Bottom-left: Second image  
+    with row2_col1:
+        st.image(get_image_url("Images/12.png"), caption="Precision, Recall, F1-Score", use_container_width=True)
+
+    # Bottom-right: Third image
+    with row2_col2:
+        st.image(get_image_url("Images/23.png"), caption="ROC-AUC Curve", use_container_width=True)
+
+    con=st.container(border=True)
+    con.subheader("Combined Confusion Matrix all files")
+    # Center the image using columns
+    col1, col2, col3 = con.columns([1, 4, 1])
+    with col2:
+        st.image(get_image_url("Images/29.png"), caption="Confusion Matrix", use_container_width=True)
+
+    con=st.container(border=True)
+    con.subheader("Root Tissue Analysis")
+    c1,c2=con.columns([5.8,4.2])
+    c1.image(get_image_url("Images/14.png"),caption="Precision, Recall, F1-Score", use_container_width=True)
+    c2.image(get_image_url("Images/24.png"),caption="ROC-AUC Curve", use_container_width=True)
+
+    con=st.container(border=True)
+    con.subheader("Seed Tissue Analysis")
+    c1,c2=con.columns([5.8,4.2])
+    c1.image(get_image_url("Images/16.png"),caption="Precision, Recall, F1-Score", use_container_width=True)
+    c2.image(get_image_url("Images/25.png"),caption="ROC-AUC Curve", use_container_width=True)
+
+    con=st.container(border=True)
+    con.subheader("Green Tissue Analysis")
+    c1,c2=con.columns([5.8,4.2])
+    c1.image(get_image_url("Images/18.png"),caption="Precision, Recall, F1-Score", use_container_width=True)
+    c2.image(get_image_url("Images/26.png"),caption="ROC-AUC Curve", use_container_width=True)
+
+    con=st.container(border=True)
+    con.subheader("Flower Development Stages Analysis")
+    c1,c2=con.columns([5.8,4.2])
+    c1.image(get_image_url("Images/20.png"),caption="Precision, Recall, F1-Score", use_container_width=True)
+    c2.image(get_image_url("Images/27.png"),caption="ROC-AUC Curve", use_container_width=True)
+
+    con=st.container(border=True)
+    con.subheader("Flower Parts Analysis")
+    c1,c2=con.columns([5.8,4.2])
+    c1.image(get_image_url("Images/22.png"),caption="Precision, Recall, F1-Score", use_container_width=True)
+    c2.image(get_image_url("Images/28.png"),caption="ROC-AUC Curve", use_container_width=True)
     tsi_plot()
 
     # Use cached image URLs
-    col1, col2 = st.columns([1, 2])
+    col1, col2 = st.columns([4,6])
     with col1:
         st.image(get_image_url("Images/1.png"), caption="Expression Data Heatmap", use_container_width=True)
-        st.write("")
-        st.image(get_image_url("Images/2.png"), caption="SVM Kernel Performance", use_container_width=True)
-        st.write("")
-        st.image(get_image_url("Images/7.png"), caption="Tissue Specific Distribution Plots", use_container_width=True)
-        st.write("")
+    with col2:    
+        st.image(get_image_url("Images/9.png") , caption="Functional Annotation [Flower Parts]", use_container_width=True)
 
-    with col2:
+    c1,c2,c3=st.columns([1,4,1])
+    with c2:
         st.image(get_image_url("Images/4.png"), caption="Functional Annotation [Root Tissues]", use_container_width=True)
         st.write("")
-
+    
     col3, col4 = st.columns(2)
     with col3:
-        st.image(get_image_url("Images/11.png"), caption="Functional Annotation [Seed Tissues]", use_container_width=True)
+        st.image(get_image_url("Images/110.png"), caption="Functional Annotation [Seed Tissues]", use_container_width=True)
         st.write("")
 
     with col4:
-        st.image(get_image_url("Images/5.png"), caption="WGCNA Heatmaps", use_container_width=True)
+        st.image(get_image_url("Images5.png"), caption="WGCNA Heatmaps", use_container_width=True)
         st.write("")
-
-    st.image(get_image_url("Images/3.png"), caption="Performance Charts for All Files", use_container_width=True)
 
     col5, col6 = st.columns(2)
     with col5:
         st.image(get_image_url("Images/8.png"), caption="Functional Annotation [Flower Development Stages]", use_container_width=True)
         st.write("")
-        st.image(get_image_url("Images/9.png"), caption="Functional Annotation [Flower Parts]", use_container_width=True)
-        st.write("")
 
     with col6:
         st.image(get_image_url("Images/10.png"), caption="Functional Annotation [Green Tissues]", use_container_width=True)
-        st.write("")
-        st.image(get_image_url("Images/6.png"), caption="Comparison of lncRNAs, TF, and Non-TF", use_container_width=True)
         st.write("")
 
     # Footer
     #base_footer()
     return
 
-# ✅ Cache the video URL generation to avoid repeated calls
+
 #@st.cache_data(show_spinner=False)
 def get_video_url(video_path):
     return generate_signed_url(video_path)
 
 def tutorials_page():
-    st.title("Tutorials Page")
-    st.write("**Learn how to use this interface**")
-    st.write("This page helps you understand how to use the app through video tutorials. Follow the steps below:")
+    header_styled("Tutorials","This page helps you understand how to use the app through video tutorials.")
+    #st.write("**Learn how to use this interface**")
+    #st.write("This page helps you understand how to use the app through video tutorials. Follow the steps below:")
 
-    # ✅ Cache the video URLs for tutorials
     navigation_video_url = get_video_url("Videos/navigation.mp4")
     if navigation_video_url:
         st.video(navigation_video_url, start_time=0)

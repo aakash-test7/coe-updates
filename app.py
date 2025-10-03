@@ -170,6 +170,24 @@ st.markdown(
                 font-size: 0.9rem;      /* Slightly reduce font size for mobile */
             }
         }
+        @media (min-width: 1950px) {
+            .stNavBar-nav {
+                overflow-x: hidden; /* Disable horizontal scrolling */
+            }
+        }
+
+        @media (max-width: 1960px) {
+            .stNavBar-nav {
+                overflow-x: auto; /* Enable horizontal scrolling */
+            }
+        }
+
+        @media (min-width: 1950px) {
+            .stNavBar-span {
+                flex: 1; /* Ensure items occupy full width */
+                text-align: center; /* Center align text */
+            }
+        }
         .stSidebar {
         background-color: #e6c4aeff;
     }
@@ -244,7 +262,10 @@ functions = {
     "LOGIN": pg.login_page,
     "PRIMER": individual.primer_info_page,
     "CRISPR": individual.crispr_info_page,
-    "Transcription Factors": individual.tf_info_page
+    "Transcription Factors": individual.tf_info_page,
+    "BLAST": individual.blast_info_page,
+    "TOOLS": individual.tools_page,
+    "GSDS": individual.gsds_info_page,
 }
 
 go_to = functions.get(st.session_state.current_page)

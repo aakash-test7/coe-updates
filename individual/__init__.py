@@ -10,3 +10,6 @@ from individual.snp import snp_info_page
 from individual.primer import primer_info_page
 from individual.crispr import crispr_info_page
 from individual.plantregmap import tf_info_page
+from individual.blast import blast_info_page
+from individual.tools import tools_page
+from individual.gsds import gsds_info_page

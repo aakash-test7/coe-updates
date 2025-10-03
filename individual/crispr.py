@@ -4,8 +4,6 @@ from pages.footer import base_footer
 
 def crispr_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    #st.title("CRISPR Construct and Information")
-    #st.write("""<p><b>Enter the Gene ID or NCBI ID to fetch the target sequence and then paste the nucleotide sequence in the CRISPR design Template section and get the set of primers just clicking Pick primers.</b></p>,""", unsafe_allow_html=True)
     header_styled("CRISPR Construct Design", "It provides detailed information about the region to be edited for construct design purpose.")
     col1, col2 = st.columns(2)
 
@@ -33,20 +31,19 @@ def crispr_info_page():
 
     if start_button:
         if tid:
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
+            matching_row = df[df['Transcript id'] == tid]
 
-                if not matching_row.empty:
-                    con=st.container(border=True)
-                    with con:
-                        st.subheader("Sequence data")
-                        show_sequence_data_p(tid)
+            if not matching_row.empty:
+                con=st.container(border=True)
+                with con:
+                    st.subheader("Sequence data")
+                    show_sequence_data_p(tid)
 
-                        with st.expander("CRISPR Design", expanded=True):
-                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" width="1100" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+                    with st.expander("CRISPR Design", expanded=True):
+                        st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" height="800" width="100%" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
-                else:
-                    st.error(f"No match found for Gene ID: {tid}")
+            else:
+                st.error(f"No match found for Gene ID: {tid}")
 
             st.toast("Task completed successfully.")
             
@@ -54,41 +51,39 @@ def crispr_info_page():
             mtid_list = [tid.strip() for tid in mtid.replace(",", " ").split()]
             mtid_list.sort()
 
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                found_ids = matching_rows['Transcript id'].unique().tolist()
-                not_found_ids = [x for x in mtid_list if x not in found_ids]
+            matching_rows = df[df['Transcript id'].isin(mtid_list)]
+            found_ids = matching_rows['Transcript id'].unique().tolist()
+            not_found_ids = [x for x in mtid_list if x not in found_ids]
 
-                if not matching_rows.empty:
-                    con = st.container(border=True)
-                    with con:
-                        st.subheader("\nSequences data")
-                        show_sequence_data_p(mtid_list, is_multi=True)
+            if not matching_rows.empty:
+                con = st.container(border=True)
+                with con:
+                    st.subheader("\nSequences data")
+                    show_sequence_data_p(mtid_list, is_multi=True)
 
-                        with st.expander("CRISPR Design", expanded=True):
-                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" width="1100" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+                    with st.expander("CRISPR Design", expanded=True):
+                        st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" width="100%" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
-                if not_found_ids:
-                    st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
+            if not_found_ids:
+                st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
 
             st.toast("Task completed successfully.")
             
         elif locid:
             tid = process_locid(locid)
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
+            matching_row = df[df['Transcript id'] == tid]
 
-                if not matching_row.empty:
-                    con=st.container(border=True)
-                    with con:
-                        st.subheader("Sequence data")
-                        show_sequence_data_p(tid)
+            if not matching_row.empty:
+                con=st.container(border=True)
+                with con:
+                    st.subheader("Sequence data")
+                    show_sequence_data_p(tid)
 
-                        with st.expander("CRISPR Design", expanded=True):
-                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" width="1100" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+                    with st.expander("CRISPR Design", expanded=True):
+                        st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" width="100%" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
-                else:
-                    st.error(f"No match found for NCBI ID: {locid}")
+            else:
+                st.error(f"No match found for NCBI ID: {locid}")
             
             st.toast("Task completed successfully.")
             
@@ -98,17 +93,15 @@ def crispr_info_page():
                 mtid = process_mlocid(",".join(available))
                 mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
                 mtid_list.sort()
-                if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                    matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                    if not matching_rows.empty:
-                        con = st.container(border=True)
-                        with con:
-                            st.subheader("\nSequences data")
-                            show_sequence_data_p(mtid_list, is_multi=True)
+                matching_rows = df[df['Transcript id'].isin(mtid_list)]
+                if not matching_rows.empty:
+                    con = st.container(border=True)
+                    with con:
+                        st.subheader("\nSequences data")
+                        show_sequence_data_p(mtid_list, is_multi=True)
 
-                            with st.expander("CRISPR Design", expanded=True):
-                                st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" width="1100" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
-
+                        with st.expander("CRISPR Design", expanded=True):
+                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://chopchop.cbu.uib.no/#" width="100%" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
 
                 st.toast("Task completed successfully.")
             if rejected:

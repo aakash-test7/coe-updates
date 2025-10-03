@@ -11,15 +11,15 @@ from bs4 import BeautifulSoup
 import base64
 import time
 import streamlit as st
-from streamlit.components.v1 import html as st_components_html
 import os
 from google.cloud import storage
 import io
-import json
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from streamlit.components.v1 import html as st_components_html
 from google.oauth2 import service_account
-from google.cloud import storage
 from datetime import timedelta
-from google.oauth2 import service_account
 
 secrets = st.secrets["gcp_service_account"]
 credentials = service_account.Credentials.from_service_account_info(secrets)
@@ -55,7 +55,239 @@ def read_excel_from_gcs(bucket_name, blob_name, header=0):
     except Exception as e:
         print(f"Error reading Excel file {blob_name} from GCS: {e}")
         return None
+# ===================== Floating Section Navbar Helpers =====================
+# Theme (mirrors Streamlit config like variables)
+NAVBAR_THEME = {
+    "primary": "#833c0d",
+    "bg": "#fbe5d6",
+    "accent": "#c55b11",
+    "text": "#000000",
+    "hover": "#a84d12",
+}
 
+def _inject_navbar_styles():
+    """Inject CSS & JS only once to support a floating right-side navbar.
+    The navbar container itself is created separately via render_section_navbar.
+    """
+    if st.session_state.get("_navbar_assets_loaded"):
+        return
+    st.session_state["_navbar_assets_loaded"] = True
+
+    css = f"""
+    <style>
+    /* Root palette for easy overrides */
+    :root {{
+        --nav-primary: {NAVBAR_THEME['primary']};
+        --nav-bg: {NAVBAR_THEME['bg']};
+        --nav-accent: {NAVBAR_THEME['accent']};
+        --nav-text: {NAVBAR_THEME['text']};
+        --nav-hover: {NAVBAR_THEME['hover']};
+    }}
+
+    .floating-nav-wrapper {{
+        position: fixed;
+        top: 90px; /* below Streamlit header */
+        right: 18px;
+        z-index: 9999;
+        max-height: 75vh;
+        width: 250px;
+        display: flex;
+        flex-direction: column;
+        background: var(--nav-bg);
+        border: 1px solid var(--nav-accent);
+        border-radius: 10px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        padding: 12px 12px 14px 12px;
+        font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+        backdrop-filter: blur(3px);
+    }}
+
+    /* Collapse (CSS-only) */
+    .floating-nav-toggle-checkbox {{
+        position: absolute;
+        left: -10000px;
+        opacity: 0;
+    }}
+    .floating-nav-toggle-label {{
+        position: absolute;
+        top: 8px;
+        right: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 26px;
+        border-radius: 6px;
+        background: var(--nav-primary);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        transition: background .2s;
+    }}
+    .floating-nav-toggle-label:hover {{ background: var(--nav-hover); }}
+
+    /* Collapsed state rules */
+    .floating-nav-toggle-checkbox:checked ~ .floating-nav-list {{ display: none; }}
+    .floating-nav-toggle-checkbox:checked ~ .floating-nav-header span {{ opacity: .85; }}
+    .floating-nav-toggle-checkbox:checked + label::after {{ content: "☰"; }}
+    .floating-nav-toggle-label::after {{ content: "×"; line-height: 1; }}
+
+    .floating-nav-header {{
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--nav-primary);
+        letter-spacing: .5px;
+        margin: 0 0 4px 0;
+        display: block;
+    }}
+
+    /* Search removed */
+
+    .floating-nav-list {{
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }}
+    .floating-nav-list::-webkit-scrollbar {{ width: 6px; }}
+    .floating-nav-list::-webkit-scrollbar-track {{ background: transparent; }}
+    .floating-nav-list::-webkit-scrollbar-thumb {{ background: var(--nav-accent); border-radius: 10px; }}
+
+    .floating-nav-item a {{
+        display: block;
+        padding: 7px 9px 7px 10px; 
+        margin: 2px 0;
+        border-radius: 6px;
+        text-decoration: none !important;
+        color: var(--nav-text) !important;
+        font-size: 13px;
+        line-height: 1.25;
+        background: rgba(255,255,255,.55);
+        border: 1px solid transparent;
+        transition: background .18s, color .18s, border-color .18s;
+        position: relative;
+    }}
+    .floating-nav-item a:hover {{
+        background: var(--nav-primary);
+        color: #fff !important;
+        border-color: var(--nav-primary);
+    }}
+    .floating-nav-item.active a {{
+        background: var(--nav-primary);
+        color: #fff !important;
+        border-color: var(--nav-primary);
+    }}
+
+    /* Collapse button removed */
+
+    @media (max-width: 1250px) {{
+        .floating-nav-wrapper {{
+            width: 210px;
+        }}
+    }}
+    @media (max-width: 1000px) {{
+        .floating-nav-wrapper {{
+            top: auto;
+            bottom: 15px;
+            right: 15px;
+            width: 190px;
+            max-height: 60vh;
+            padding: 10px 10px;
+        }}
+    }}
+    @media (max-width: 900px) {{
+        .floating-nav-wrapper {{
+            position: fixed;
+            right: 10px;
+            bottom: 10px;
+            top: auto;
+            width: 180px;
+            transform: translateY(0);
+        }}
+        .floating-nav-wrapper.minimized {{
+            height: auto;
+            max-height: none;
+        }}
+    }}
+
+    /* Pulse indicator for active section */
+    .floating-nav-item a .dot {{
+        width: 6px; height: 6px; border-radius: 50%; background: var(--nav-accent);
+        display: inline-block; margin-right: 6px; transition: background .25s;
+    }}
+    .floating-nav-item.active a .dot {{ background: #fff; }}
+
+    /* Smooth scroll behavior for page */
+    html {{ scroll-behavior: smooth; }}
+    </style>
+    """
+
+    js = """
+    <script>
+    // Observe headings to highlight active nav item
+    const activateObserver = () => {
+        const nav = document.querySelector('.floating-nav-list');
+        if(!nav) return;
+        const links = nav.querySelectorAll('a[data-target]');
+        const map = {};
+        links.forEach(a => { map[a.getAttribute('data-target')] = a.parentElement; });
+
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    Object.values(map).forEach(li => li.classList.remove('active'));
+                    if(map[id]) map[id].classList.add('active');
+                }
+            });
+        }, { rootMargin: '0px 0px -65% 0px', threshold: [0, 1.0] });
+
+        Object.keys(map).forEach(id => {
+            const el = document.getElementById(id);
+            if(el) observer.observe(el);
+        });
+    };
+
+    window.addEventListener('load', () => { activateObserver(); });
+    </script>
+    """
+    st.markdown(css + js, unsafe_allow_html=True)
+
+def render_section_navbar(sections, title="Quick Navigation"):
+    """Render the floating navigation panel.
+    sections: list of tuples (id, label)
+    """
+    _inject_navbar_styles()
+    items_html = []
+    for sid, label in sections:
+        items_html.append(
+            f"<li class='floating-nav-item' data-label='{label.lower()}'><a data-target='{sid}' href='#{sid}'><span class='dot'></span>{label}</a></li>"
+        )
+    html_block = f"""
+    <div class='floating-nav-wrapper'>
+        <input type='checkbox' id='floating-nav-cbx' class='floating-nav-toggle-checkbox' />
+        <label for='floating-nav-cbx' class='floating-nav-toggle-label'></label>
+        <div class='floating-nav-header'>
+            <span>{title}</span>
+        </div>
+        <ul class='floating-nav-list'>
+            {''.join(items_html)}
+        </ul>
+    </div>
+    """
+    st.markdown(html_block, unsafe_allow_html=True)
+
+def section_anchor(section_id):
+    """Insert an HTML anchor target with spacing above to avoid header overlap."""
+    st.markdown(f"<div id='{section_id}' style='position:relative; top:-75px;'></div>", unsafe_allow_html=True)
+
+# =================== End Floating Section Navbar Helpers ===================
+
+def _slugify(label: str) -> str:
+    return ''.join(c.lower() if c.isalnum() else '-' for c in label).strip('-').replace('--','-')
 df = read_excel_from_gcs(bucket_name, "Data/FPKM_Matrix(Ca).xlsx")
 miRNA_df = read_excel_from_gcs(bucket_name, "Data/8.xlsx")
 protein_df = read_excel_from_gcs(bucket_name, "Data/9.xlsx")
@@ -65,6 +297,8 @@ cello_df = read_excel_from_gcs(bucket_name, "Data/13.xlsx")
 tsi_df=read_excel_from_gcs(bucket_name, "Data/12.xlsx")
 prop_df=read_excel_from_gcs(bucket_name,"Data/16.xlsx")
 tf_df=read_excel_from_gcs(bucket_name,"Data/17.xlsx")
+pfam_df=read_excel_from_gcs(bucket_name,"Data/18.xlsx")
+df_28=read_excel_from_gcs(bucket_name,"Data/19.xlsx")
 
 def normalize_data(data):
     return data.applymap(lambda x: np.log2(x) if x > 0 else 0)
@@ -207,6 +441,7 @@ def automate_Wild_task(tid):
 
     return page_source
 
+
 def show_sequence_data(tid, is_multi=False):
     """Display sequence data for a transcript ID."""
     if not is_multi:
@@ -231,6 +466,7 @@ def show_sequence_data(tid, is_multi=False):
                 st.code(peptide_code, language="text")
             with st.expander("Promoter Sequence (Genomic Sequences 2kb upstream to the transcription start site)"):
                 st.code(promote_code, language="text")
+
             combined_file_content = (
                 f">{tid}|{tid} Genomic Sequence\n{gene_code}\n\n"
                 f">{tid}|{tid} Transcript Sequence\n{transcript_code}\n\n"
@@ -239,20 +475,25 @@ def show_sequence_data(tid, is_multi=False):
                 f">{tid}|{tid} Promoter Sequence\n{promote_code}\n")
             col1,col2,col3=st.columns([1,2,1])
             with col2:
-                st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
             header = f">{tid}|{tid}"
             promote_file = f"{header}\n{promote_code}\n"
             col1,col2,col3=st.columns([1,2,1])
             with col2:
-                st.download_button(label="Download Promoter Sequence as .txt", data=promote_file, file_name=f"{tid}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                st.download_button(label="Download Promoter Sequence in FASTA Format (.txt)", data=promote_file, file_name=f"{tid}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
             st.write("Paste the promoter sequence on the following link to get promoter region analysis!")
             st.write("https://bioinformatics.psb.ugent.be/webtools/plantcare/html/search_CARE_onCluster.html\n")
             return True
         return False
     else:
-        # For multi transcript IDs
+        genomic_sequences = ""
+        transcript_sequences = ""
+        cds_sequences = ""
+        peptide_sequences = ""
+        promoter_sequences = ""
+
         for t_id in tid:
             matching_rows = df[df['Transcript id'] == t_id]
             if not matching_rows.empty:
@@ -262,6 +503,12 @@ def show_sequence_data(tid, is_multi=False):
                 gene_code = format_sequence(matching_rows['Genomic Sequence'].values[0])
                 promote_code = format_sequence(matching_rows['Promoter Sequence'].values[0])
                 genomic_coordinates = matching_rows['Genomic Coordinates'].values[0]
+
+                genomic_sequences += f">{t_id}\n{gene_code}\n\n"
+                transcript_sequences += f">{t_id}\n{transcript_code}\n\n"
+                cds_sequences += f">{t_id}\n{cds_code}\n\n"
+                peptide_sequences += f">{t_id}\n{peptide_code}\n\n"
+                promoter_sequences += f">{t_id}\n{promote_code}\n\n"
 
                 with st.expander(f"{t_id} Genomic Sequence (Genomic Coordinates - {genomic_coordinates})"):
                     st.code(gene_code, language="text")
@@ -282,19 +529,30 @@ def show_sequence_data(tid, is_multi=False):
                     f">{t_id}|{t_id} Promoter Sequence\n{promote_code}\n")
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
-                    st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                    st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
                 header = f">{t_id}|{t_id}"
                 promote_file = f"{header}\n{promote_code}\n"
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
-                    st.download_button(label="Download Promoter Sequence as .txt", data=promote_file, file_name=f"{t_id}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                    st.download_button(label="Download Promoter Sequence in FASTA Format (.txt)", data=promote_file, file_name=f"{t_id}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
                 st.write(f"Paste the promoter sequence for {t_id} on the following link to get promoter region analysis!")
                 st.write("https://bioinformatics.psb.ugent.be/webtools/plantcare/html/search_CARE_onCluster.html\n")
                 st.write("\n")
             else:
                 st.write(f"No matching data found for Gene ID: {t_id}\n")
+        with st.expander("Combined Sequences Download", expanded=True):
+            col1, col2, col3 = st.columns([1, 2, 1])
+            col2.download_button(label="Download Combined Genomic Sequences in FASTA Format (.txt)",data=genomic_sequences,file_name="combined_genomic_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
+
+            col2.download_button(label="Download Combined Transcript Sequences in FASTA Format (.txt)",data=transcript_sequences,file_name="combined_transcript_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
+
+            col2.download_button(label="Download Combined CDS Sequences in FASTA Format (.txt)",data=cds_sequences,file_name="combined_cds_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
+
+            col2.download_button(label="Download Combined Peptide Sequences in FASTA Format (.txt)",data=peptide_sequences,file_name="combined_peptide_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
+
+            col2.download_button(label="Download Combined Promoter Sequences in FASTA Format (.txt)",data=promoter_sequences,file_name="combined_promoter_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
 
 def show_biochemical_properties(tid, is_multi=False):
     """Display biochemical properties for transcript ID(s)."""
@@ -416,7 +674,6 @@ def show_go_kegg_data(tid, is_multi=False):
             if not GO_matching_row.empty:
                 temp_result = GO_matching_row[GO_matching_row['Transcript id'] == t_id]
                 result = pd.concat([result, temp_result], ignore_index=True)
-            # Removed separate 'else' message
         if not result.empty:
             result = result.drop_duplicates(subset=['Transcript id'])
             st.dataframe(result)
@@ -452,7 +709,7 @@ def fpkm_glossary():
         '30DAP - Seed 30 Days After Pollination': 'The developmental stage of seed thirty days after pollination.',
     }
 
-    with st.expander("Key Terms and Definitions", expanded=True):
+    with st.expander("Abbreviations", expanded=True):
         c1, c2, c3 = st.columns(3)
 
         columns = [c1, c2, c3]
@@ -479,6 +736,44 @@ def show_fpkm_matrix(tid, is_multi=False):
             temp_result = temp_result.drop(columns=['Genomic Coordinates', 'mRNA', 'lncRNA', 'Genomic Sequence', 'Transcript Sequence', 'Peptide Sequence', 'Cds Sequence', 'Promoter Sequence'])
             result = pd.concat([result, temp_result], ignore_index=True)
         sorted_result = result.sort_values(by="Transcript id")
+        st.dataframe(sorted_result)
+        return True
+
+def show_df28_matrix(id_list, is_multi=False, by_tid=True):
+    temp_df = df_28.copy()
+    if by_tid:
+        id_column = 'Chickpea_Id'
+    else:
+        id_column = 'LOC ID'
+    if not is_multi:
+        result = temp_df[temp_df[id_column] == id_list]
+        st.dataframe(result)
+        return True
+    else:
+        result = pd.DataFrame()
+        for id in id_list:
+            temp_result = temp_df[temp_df[id_column] == id]
+            result = pd.concat([result, temp_result], ignore_index=True)
+        sorted_result = result.sort_values(by='Chickpea_Id')
+        st.dataframe(sorted_result)
+        return True
+
+def show_pfam_matrix(id_list, is_multi=False, by_tid=True):
+    temp_df = pfam_df.copy()
+    if by_tid:
+        id_column = 'Transcript id'
+    else:
+        id_column = 'LOC ID'
+    if not is_multi:
+        result = temp_df[temp_df[id_column] == id_list]
+        st.dataframe(result)
+        return True
+    else:
+        result = pd.DataFrame()
+        for id in id_list:
+            temp_result = temp_df[temp_df[id_column] == id]
+            result = pd.concat([result, temp_result], ignore_index=True)
+        sorted_result = result.sort_values(by='Transcript id')
         st.dataframe(sorted_result)
         return True
 
@@ -669,7 +964,6 @@ def show_inparalogs_data(tid, is_multi=False):
 
         return True
     return
-
 def process_tid(tid, df):
     result = df[df['Transcript id'] == tid]
     if not result.empty:
@@ -682,7 +976,6 @@ def process_tid(tid, df):
 def show_tf_info(tid, is_multi=False):
     """Display Transcription Factor info for Transcript ID(s) by matching Gene_ID in tf_df."""
     
-    # Single input: Process a single Transcript ID
     if not is_multi:
         gene_id = process_tid(tid, df)
         
@@ -710,7 +1003,6 @@ def show_tf_info(tid, is_multi=False):
             st.write(f"No Gene ID found for Transcript ID: {tid}")
             return False
     
-    # Multiple input: Process multiple Transcript IDs
     else:
         result = pd.DataFrame()
         
@@ -749,65 +1041,164 @@ def transcriptid_info(tid):
         matching_row = df[df['Transcript id'] == tid]
 
         if not matching_row.empty:
+            # Define ordered sections (label list) for single transcript
+            section_labels = [
+                "Sequence data",
+                "Biochemical Properties",
+                "Protein Protein Interaction",
+                "Cellular-localization",
+                "Gene Ontology and Kyoto Encyclopedia of Genes and Genomes Analysis",
+                "Fragments per kilobase of Exon per million mapped fragments Matrix Atlas",
+                "Pfam Domain Information",
+                "Single Nucleotide Polymorphism (SNP)",
+                "RNA",
+                "lncRNA",
+                "miRNA Target",
+                "Transcription Factor",
+                "Orthologs",
+                "Paralogs"
+            ]
+            sections = [(_slugify(lbl), lbl) for lbl in section_labels]
+            render_section_navbar(sections, title="Sections")
             con=st.container(border=True)
             with con:
+                section_anchor(sections[0][0])
                 st.subheader("Sequence data")
                 show_sequence_data(tid)
-
-            #con=st.container(border=True)
-            #with con:
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+                    st.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+                    st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
+    
+                section_anchor(sections[1][0])
                 st.subheader("Biochemical Properties")
                 show_biochemical_properties(tid)
 
             con=st.container(border=True)
             with con:
+                section_anchor(sections[2][0])
                 st.subheader("Protein Protein Interaction")
                 show_protein_ppi_data(tid)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("STRING v12.0 - https://string-db.org/")
+                with c2.popover("Research Article", use_container_width=True):    
+                    st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/36370105/" target="_blank">Szklarczyk D, Kirsch R, Koutrouli M, Nastou K, Mehryary F, Hachilif R, Gable AL, Fang T, Doncheva NT, Pyysalo S, Bork P, Jensen LJ, von Mering C. The STRING database in 2023: protein-protein association networks and functional enrichment analyses for any sequenced genome of interest. Nucleic Acids Res. 2023 Jan 6;51(D1):D638-D646. doi: 10.1093/nar/gkac1000. PMID: 36370105; PMCID: PMC9825434. https://pubmed.ncbi.nlm.nih.gov/36370105/</a>', unsafe_allow_html=True)
             
             con=st.container(border=True)
             with con:
+                section_anchor(sections[3][0])
                 st.subheader("Cellular-localization")
                 show_cellular_Localization(tid)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("CELLO v.2.5: subCELlular Localization predictor - http://cello.life.nctu.edu.tw/")
+                with c2.popover("Research Article", use_container_width=True):    
+                    st.write("""(1) <a href="https://pubmed.ncbi.nlm.nih.gov/15096640/" target="_blank">Yu CS, Lin CJ, Hwang JK: Predicting subcellular localization of proteins for Gram-negative bacteria by support vector machines based on n-peptide compositions. Protein Science 2004, 13:1402-1406. https://pubmed.ncbi.nlm.nih.gov/15096640/</a>""", unsafe_allow_html=True)
+                    st.write("""(2) <a href="https://pubmed.ncbi.nlm.nih.gov/16752418/" target="_blank">Yu CS, Chen YC, Lu CH, Hwang JK, Proteins: Structure, Function and Bioinformatics, 2006, 64:643-651. https://pubmed.ncbi.nlm.nih.gov/16752418/</a>""", unsafe_allow_html=True)
 
             con=st.container(border=True)
             with con:
+                section_anchor(sections[4][0])
                 st.subheader("Gene Ontology and Kyoto Encyclopedia of Genes and Genomes Analysis")
                 show_go_kegg_data(tid)
-
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("GOATOOLS: A Python library for Gene Ontology analyses - https://pypi.org/project/goatools/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('<a href="https://www.nature.com/articles/s41598-018-28948-z" target="_blank">Klopfenstein, D.V., Zhang, L., Pedersen, B.S. et al. GOATOOLS: A Python library for Gene Ontology analyses. Sci Rep 8, 10872 (2018). https://doi.org/10.1038/s41598-018-28948-z</a>', unsafe_allow_html=True)
+    
             con=st.container(border=True)
             with con:
+                section_anchor(sections[5][0])
                 st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
                 show_fpkm_matrix(tid)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
+    
+                show_df28_matrix(tid, by_tid=True)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://www.nature.com/articles/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
                 fpkm_glossary()
 
             con=st.container(border=True)
             with con:
+                section_anchor(sections[6][0])
+                st.subheader("Pfam Domain Information")
+                show_pfam_matrix(tid, by_tid=True)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write(" a ")
+                with c2.popover("Research Article", use_container_width=True):    
+                    st.write(' a ')
+
+            con=st.container(border=True)
+            with con:
+                section_anchor(sections[7][0])
                 st.subheader("Single Nucleotide Polymorphism (SNP)")
                 show_snp_data(tid)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("https://cegresources.icrisat.org/cicerseq/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://doi.org/10.1038/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
 
             con=st.container(border=True)
             with con:
+                section_anchor(sections[8][0])
                 st.subheader("RNA")
                 show_rna_data(tid)
-
+                section_anchor(sections[9][0])
                 st.subheader("lncRNA")
                 show_lncrna_data(tid)
-
+                section_anchor(sections[10][0])
                 st.subheader("miRNA Target")
                 show_mirna_data(tid)
-
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("PmiREN - https://pmiren.com")
+                    st.write("psRNATarget - https://www.zhaolab.org/psRNATarget/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""", unsafe_allow_html=True)
+                    st.write("""<a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""", unsafe_allow_html=True)
+                    st.write("""<a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""", unsafe_allow_html=True)
+                    st.write("""<a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""", unsafe_allow_html=True)    
+            
             con=st.container(border=True)
             with con:
+                section_anchor(sections[11][0])
                 st.subheader("Transcription Factor")
                 show_tf_info(tid)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("PlantRegMap - http://plantregmap.gao-lab.org/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545. https://pubmed.ncbi.nlm.nih.gov/31701126/</a>', unsafe_allow_html=True)
+                    st.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657. https://pubmed.ncbi.nlm.nih.gov/27924042/</a>', unsafe_allow_html=True)
+                    st.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157. https://pubmed.ncbi.nlm.nih.gov/25750178/</a>', unsafe_allow_html=True)
 
             con=st.container(border=True)
             with con:
+                section_anchor(sections[12][0])
                 st.subheader("Orthologs")
                 show_orthologs_data(tid)
-                
+                section_anchor(sections[13][0])
                 st.subheader("Paralogs")
                 show_inparalogs_data(tid)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
         else:
             st.error("Gene ID not found\n")
     else:
@@ -826,60 +1217,162 @@ def multi_transcriptid_info(mtid):
         st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
 
     if found_ids:
+        # Define ordered sections (label list) for multi transcript view
+        section_labels = [
+            "Sequences data",
+            "Biochemical Properties",
+            "Protein Protein Interaction",
+            "Cellular-localization",
+            "Gene Ontology and Kyoto Encyclopedia of Genes and Genomes Analysis",
+            "Fragments per kilobase of Exon per million mapped fragments Matrix Atlas",
+            "Pfam Domain Information",
+            "Single Nucleotide Polymorphism (SNP)",
+            "RNA",
+            "lncRNA",
+            "miRNA Target",
+            "Transcription Factor",
+            "Orthologs",
+            "Paralogs"
+        ]
+        sections = [(_slugify(lbl), lbl) for lbl in section_labels]
+        render_section_navbar(sections, title="Sections")
         con=st.container(border=True)
         with con:
+            section_anchor(sections[0][0])
             st.subheader("\nSequences data")
             show_sequence_data(found_ids, is_multi=True)
-
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+                st.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+                st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
+    
+            section_anchor(sections[1][0])
             st.subheader("Biochemical Properties")
             show_biochemical_properties(found_ids, is_multi=True)
 
         con=st.container(border=True)
         with con:
+            section_anchor(sections[2][0])
             st.subheader("Protein Protein Interaction")
             show_protein_ppi_data(found_ids, is_multi=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("STRING v12.0 - https://string-db.org/")
+            with c2.popover("Research Article", use_container_width=True):    
+                st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/36370105/" target="_blank">Szklarczyk D, Kirsch R, Koutrouli M, Nastou K, Mehryary F, Hachilif R, Gable AL, Fang T, Doncheva NT, Pyysalo S, Bork P, Jensen LJ, von Mering C. The STRING database in 2023: protein-protein association networks and functional enrichment analyses for any sequenced genome of interest. Nucleic Acids Res. 2023 Jan 6;51(D1):D638-D646. doi: 10.1093/nar/gkac1000. PMID: 36370105; PMCID: PMC9825434. https://pubmed.ncbi.nlm.nih.gov/36370105/</a>', unsafe_allow_html=True)
 
         con=st.container(border=True)
         with con:
+            section_anchor(sections[3][0])
             st.subheader("\nCellular-localization")
             show_cellular_Localization(found_ids, is_multi=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("CELLO v.2.5: subCELlular Localization predictor - http://cello.life.nctu.edu.tw/")
+            with c2.popover("Research Article", use_container_width=True):    
+                st.write("""(1) <a href="https://pubmed.ncbi.nlm.nih.gov/15096640/" target="_blank">Yu CS, Lin CJ, Hwang JK: Predicting subcellular localization of proteins for Gram-negative bacteria by support vector machines based on n-peptide compositions. Protein Science 2004, 13:1402-1406. https://pubmed.ncbi.nlm.nih.gov/15096640/</a>""", unsafe_allow_html=True)
+                st.write("""(2) <a href="https://pubmed.ncbi.nlm.nih.gov/16752418/" target="_blank">Yu CS, Chen YC, Lu CH, Hwang JK, Proteins: Structure, Function and Bioinformatics, 2006, 64:643-651. https://pubmed.ncbi.nlm.nih.gov/16752418/</a>""", unsafe_allow_html=True)
 
         con=st.container(border=True)
         with con:
+            section_anchor(sections[4][0])
             st.subheader("\nGene Ontology and Kyoto Encyclopedia of Genes and Genomes Analysis")
             show_go_kegg_data(found_ids, is_multi=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("GOATOOLS: A Python library for Gene Ontology analyses - https://pypi.org/project/goatools/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write('<a href="https://www.nature.com/articles/s41598-018-28948-z" target="_blank">Klopfenstein, D.V., Zhang, L., Pedersen, B.S. et al. GOATOOLS: A Python library for Gene Ontology analyses. Sci Rep 8, 10872 (2018). https://doi.org/10.1038/s41598-018-28948-z</a>', unsafe_allow_html=True)
 
         con=st.container(border=True)
         with con:
+            section_anchor(sections[5][0])
             st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
             show_fpkm_matrix(found_ids, is_multi=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
+            show_df28_matrix(found_ids, is_multi=True, by_tid=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write("""<a href="https://www.nature.com/articles/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
             fpkm_glossary()
 
         con=st.container(border=True)
         with con:
+            section_anchor(sections[6][0])
+            st.subheader("Pfam Domain Information")
+            show_pfam_matrix(found_ids, is_multi=True, by_tid=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write(" a ")
+            with c2.popover("Research Article", use_container_width=True):    
+                st.write(' a ')
+
+        con=st.container(border=True)
+        with con:
+            section_anchor(sections[7][0])
             st.subheader("\nSingle Nucleotide Polymorphism (SNP)")
             show_snp_data(found_ids, is_multi=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("https://cegresources.icrisat.org/cicerseq/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write("""<a href="https://doi.org/10.1038/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
 
         con=st.container(border=True)
         with con:
+            section_anchor(sections[8][0])
             st.subheader("RNA")
             show_rna_data(found_ids, is_multi=True)
+            section_anchor(sections[9][0])
             st.subheader("lncRNA")
             show_lncrna_data(found_ids, is_multi=True)
+            section_anchor(sections[10][0])
             st.subheader("miRNA Target")
             show_mirna_data(found_ids, is_multi=True)
-
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("PmiREN - https://pmiren.com")
+                st.write("psRNATarget - https://www.zhaolab.org/psRNATarget/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""", unsafe_allow_html=True)
+                st.write("""<a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""", unsafe_allow_html=True)
+                st.write("""<a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""", unsafe_allow_html=True)
+                st.write("""<a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""", unsafe_allow_html=True)    
+            
         con=st.container(border=True)
         with con:
+            section_anchor(sections[11][0])
             st.subheader("Transcription Factor")
             show_tf_info(found_ids, is_multi=True)
+            c1,c2=con.columns(2)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("PlantRegMap - http://plantregmap.gao-lab.org/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545. https://pubmed.ncbi.nlm.nih.gov/31701126/</a>', unsafe_allow_html=True)
+                st.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657. https://pubmed.ncbi.nlm.nih.gov/27924042/</a>', unsafe_allow_html=True)
+                st.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157. https://pubmed.ncbi.nlm.nih.gov/25750178/</a>', unsafe_allow_html=True)
 
         con=st.container(border=True)
         with con:
+            section_anchor(sections[12][0])
             st.subheader("Orthologs")
             show_orthologs_data(found_ids, is_multi=True)
+            section_anchor(sections[13][0])
             st.subheader("\nParalogs")
             show_inparalogs_data(found_ids, is_multi=True)
+            with c1.popover("Data Source", use_container_width=True):
+                st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
+            with c2.popover("Research Article", use_container_width=True):
+                st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
     else:
         st.error("Gene ID not found\n")
 
@@ -999,6 +1492,7 @@ def perf_chart(selected_tissues):
     else:
         colors = [col(tissue) for tissue in selected_tissues]
         st.bar_chart(filtered_df.T, height=400, color=colors,stack=False,x_label='Metrics', y_label='Accuracy/Score')
+
 def svm_charts():
     data = {"Tissue/Stages/File": ["Seed Tissues", "Green Tissues", "Root Tissues", "Flower Development Stages", "Flower Parts"],
         "Training Accuracy": [0.9457962198566152, 0.9669780577883988, 0.9564414512274604, 0.9459048446665218, 0.9404736041711927],
@@ -1147,7 +1641,7 @@ def show_sequence_data_p(tid, is_multi=False):
             )
             col1,col2,col3=st.columns([1,2,1])
             with col2:
-                st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
             return True
         return False
@@ -1166,7 +1660,7 @@ def show_sequence_data_p(tid, is_multi=False):
                 )
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
-                    st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                    st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
             else:
                 st.write(f"No matching data found for Gene ID: {t_id}\n")
 
@@ -1186,7 +1680,7 @@ def show_sequence_data_cds(tid, is_multi=False):
             )
             col1,col2,col3=st.columns([1,2,1])
             with col2:
-                st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
             return True
         return False
@@ -1205,7 +1699,7 @@ def show_sequence_data_cds(tid, is_multi=False):
                 )
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
-                    st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                    st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
             else:
                 st.write(f"No matching data found for Gene ID: {t_id}\n")
 
@@ -1228,7 +1722,7 @@ def show_sequence_data_g_p(tid, is_multi=False):
                 f">{tid}|{tid} Peptide Sequence\n{peptide_code}\n\n")
             col1,col2,col3=st.columns([1,2,1])
             with col2:
-                st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
         return False
     else:
         # For multi transcript IDs
@@ -1248,7 +1742,7 @@ def show_sequence_data_g_p(tid, is_multi=False):
                     f">{t_id}|{t_id} Peptide Sequence\n{peptide_code}\n\n")
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
-                    st.download_button(label="Download Sequence as .txt", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                    st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
 def header_styled(title: str, tagline: str):
     st.markdown(f"""
@@ -1355,3 +1849,86 @@ def header_styled(title: str, tagline: str):
             <div class="custom-header-tagline">{tagline}</div>
         </div>
     """, unsafe_allow_html=True)
+
+def run_blast_and_get_rid(sequence_input):
+    #chrome_options = Options()
+    #chrome_options.add_argument("--disable-gpu")
+    #chrome_options.add_argument("--no-sandbox")
+    #chrome_options.add_argument("--window-size=1920,1200")
+    #chrome_options.add_argument('--disable-dev-shm-usage')
+
+    #driver = webdriver.Chrome(options=chrome_options)
+    driver=web_driver()
+    rid = None
+
+    try:
+        driver.get("https://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastn&PAGE_TYPE=BlastSearch&LINK_LOC=blasthome")
+
+        textarea = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "seq"))
+        )
+        textarea.clear()
+        textarea.send_keys(sequence_input)
+
+        blast_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#blastButton1 input.blastbutton"))
+        )
+        blast_button.click()
+
+        time.sleep(10)
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+        rid_input = soup.find("input", {"name": "RID"})
+        if rid_input:
+            rid = rid_input.get("value")
+
+    except Exception as e:
+        st.error(f"Error during BLAST submission: {e}")
+    finally:
+        driver.quit()
+
+    return rid
+
+def run_gsds(cds_code, genomic_code):
+    driver=web_driver()
+    result_url = None
+
+    try:
+        driver.get("https://gsds.gao-lab.org") 
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "input_format_selector"))
+        )
+        format_selector = driver.find_element(By.ID, "input_format_selector")
+        format_selector.send_keys("seq")
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "seq_data_txt1"))
+        )
+        cds_textarea = driver.find_element(By.ID, "seq_data_txt1")
+        cds_textarea.clear()
+        cds_textarea.send_keys(cds_code)
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "seq_data_txt2"))
+        )
+        genomic_textarea = driver.find_element(By.ID, "seq_data_txt2")
+        genomic_textarea.clear()
+        genomic_textarea.send_keys(genomic_code)
+
+        # Wait until the submit button is clickable
+        submit_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "submit_button"))
+        )
+        # Use JavaScript to click the button (avoids interception issues)
+        driver.execute_script("arguments[0].click();", submit_button)
+
+        time.sleep(10)
+
+        result_url = driver.current_url
+
+    except Exception as e:
+        st.error(f"Error during form submission: {e}")
+    finally:
+        driver.quit()
+
+    return result_url

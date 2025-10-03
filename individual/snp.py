@@ -4,9 +4,7 @@ from pages.footer import base_footer
 
 def snp_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    #st.title("Single Nucleotide Polymorphism Calling")
-    #st.write("**It gives the details of putative SNP variations obtained from the chickpea pangenome**")
-    header_styled("Single Nucleotide Polymorphism Calling", "It gives the details of putative SNP variations obtained from the chickpea pangenome")
+    header_styled("Single Nucleotide Polymorphism Calling", "It gives the details of putative SNP variations present in the chickpea pangenome")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -32,42 +30,39 @@ def snp_info_page():
 
     if start_button:
         if tid:
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
-                if not matching_row.empty:
-                    con = st.container(border=True)
-                    with con:
-                        st.subheader("Single Nucleotide Polymorphism (SNP)")
-                        show_snp_data(tid)
-                else:
-                    st.error(f"No match found for Gene ID: {tid}")
+            matching_row = df[df['Transcript id'] == tid]
+            if not matching_row.empty:
+                con = st.container(border=True)
+                with con:
+                    st.subheader("Single Nucleotide Polymorphism (SNP)")
+                    show_snp_data(tid)
+            else:
+                st.error(f"No match found for Gene ID: {tid}")
             st.toast("Task completed successfully.")
         elif mtid:
             mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
             mtid_list.sort()
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                found_ids = matching_rows['Transcript id'].unique().tolist()
-                not_found_ids = [x for x in mtid_list if x not in found_ids]
-                if not matching_rows.empty:
-                    con = st.container(border=True)
-                    with con:
-                        st.subheader("Single Nucleotide Polymorphism (SNP)")
-                        show_snp_data(mtid_list, is_multi=True)
-                if not_found_ids:
-                    st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
+            matching_rows = df[df['Transcript id'].isin(mtid_list)]
+            found_ids = matching_rows['Transcript id'].unique().tolist()
+            not_found_ids = [x for x in mtid_list if x not in found_ids]
+            if not matching_rows.empty:
+                con = st.container(border=True)
+                with con:
+                    st.subheader("Single Nucleotide Polymorphism (SNP)")
+                    show_snp_data(mtid_list, is_multi=True)
+            if not_found_ids:
+                st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
             st.toast("Task completed successfully.")
         elif locid:
             tid = process_locid(locid)
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
-                if not matching_row.empty:
-                    con = st.container(border=True)
-                    with con:
-                        st.subheader("Single Nucleotide Polymorphism (SNP)")
-                        show_snp_data(tid)
-                else:
-                    st.error(f"No match found for NCBI ID: {locid}")
+            matching_row = df[df['Transcript id'] == tid]
+            if not matching_row.empty:
+                con = st.container(border=True)
+                with con:
+                    st.subheader("Single Nucleotide Polymorphism (SNP)")
+                    show_snp_data(tid)
+            else:
+                st.error(f"No match found for NCBI ID: {locid}")
             st.toast("Task completed successfully.")
         elif mlocid:
             available, rejected = mlocid_error(mlocid)
@@ -75,18 +70,16 @@ def snp_info_page():
                 mtid = process_mlocid(",".join(available))
                 mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
                 mtid_list.sort()
-                if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                    matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                    if not matching_rows.empty:
-                        con = st.container(border=True)
-                        with con:
-                            st.subheader("Single Nucleotide Polymorphism (SNP)")
-                            show_snp_data(mtid_list, is_multi=True)
+                matching_rows = df[df['Transcript id'].isin(mtid_list)]
+                if not matching_rows.empty:
+                    con = st.container(border=True)
+                    with con:
+                        st.subheader("Single Nucleotide Polymorphism (SNP)")
+                        show_snp_data(mtid_list, is_multi=True)
                 st.toast("Task completed successfully.")
 
             if rejected:
                 st.error(f"No matches found for NCBI IDs: {', '.join(rejected)}")
-        
         else:
             st.warning("Need either a Gene ID or NCBI ID to proceed.")
     elif tid == "":

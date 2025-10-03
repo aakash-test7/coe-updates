@@ -2,93 +2,102 @@ import requests
 import streamlit as st
 from backend import generate_signed_url, img_to_base64, svm_charts, tsi_plot, header_styled
 from pages.footer import base_footer
+import streamlit as st
+from backend import svm_charts, tsi_plot, header_styled
+from pages.footer import base_footer
 
 def citations_page():
     header_styled("Citations","Citations for Supporting Data, Algorithms, and Tools Utilized in the ChickpeaOmicsExplorer")
+    con=st.container(border=True)
+    con.write("### Expression Data :")
+    con.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+    con.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
+    
     con = st.container(border=True)
-    con.write("### Orthologous analysis:")
-    con.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/") 
-    con.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Jiahe Sun, Fang Lu, Yongjiang Luo, Lingzi Bie, Ling Xu, Yi Wang, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403</a>', unsafe_allow_html=True)
-    con.write("Contact: yiwang28@swu.edu.cn")
+    con.write("### Sequences:")
+    con.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+    
+    con=st.container(border=True)
+    con.write("### BLAST Search:")
+    con.write("BLAST (Basic Local Alignment Search Tool) - https://blast.ncbi.nlm.nih.gov/Blast.cgi")
+    con.write("<a href='https://doi.org/10.1093/nar/gkw241' target='_blank'>Sayers EW, Beck J, Bolton EE, Brister JR, Chan J, Connor R, Feldgarden M, Fine AM, Funk K, Hoffman J, Kannan S, Kelly C, Klimke W, Kim S, Lathrop S, Marchler-Bauer A, Murphy TD, O'Sullivan C, Schmieder E, Skripchenko Y, Stine A, Thibaud-Nissen F, Wang J, Ye J, Zellers E, Schneider VA, Pruitt KD. Database resources of the National Center for Biotechnology Information in 2025. Nucleic Acids Res. 2025 Jan 6;53(D1):D20-D29. doi: 10.1093/nar/gkae979. PMID: 39526373; PMCID: PMC11701734.</a>", unsafe_allow_html=True)
+
+    con = st.container(border=True)
+    con.write("### SNP Calling:")
+    con.write("https://cegresources.icrisat.org/cicerseq/")
+    con.write("""<a href="https://doi.org/10.1038/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
 
     con = st.container(border=True)
     con.write("### Primer Design:")
     con.write("Primer3 - https://primer3.org/")
-    con.write("""
-    <p><a href="https://pubmed.ncbi.nlm.nih.gov/22730293/" target="_blank">Untergasser A, Cutcutache I, Koressaar T, Ye J, Faircloth BC, Remm M, Rozen SG. Primer3--new capabilities and interfaces. Nucleic Acids Res. 2012 Aug;40(15):e115. doi: 10.1093/nar/gks596. Epub 2012 Jun 22. PMID: 22730293; PMCID: PMC3424584.</a></p>
-    """,unsafe_allow_html=True)
+    con.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/22730293/" target="_blank">Untergasser A, Cutcutache I, Koressaar T, Ye J, Faircloth BC, Remm M, Rozen SG. Primer3--new capabilities and interfaces. Nucleic Acids Res. 2012 Aug;40(15):e115. doi: 10.1093/nar/gks596. Epub 2012 Jun 22. PMID: 22730293; PMCID: PMC3424584, https://pubmed.ncbi.nlm.nih.gov/22730293/</a>""",unsafe_allow_html=True)
 
-    con = st.container(border=True)
-    con.write("### Sequences:")
-    con.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
-    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186.</a>', unsafe_allow_html=True)
+    con=st.container(border=True)
+    con.write("### CRISPR Construct:")
+    con.write("CHOPCHOP - https://chopchop.cbu.uib.no")
+    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/31106371/" target="_blank">Labun K, Montague TG, Krause M, Torres Cleuren YN, Tjeldnes H, Valen E. CHOPCHOP v3: expanding the CRISPR web toolbox beyond genome editing. Nucleic Acids Res. 2019 Jul 2;47(W1):W171-W174. doi: 10.1093/nar/gkz365. PMID: 31106371; PMCID: PMC6602426. https://pubmed.ncbi.nlm.nih.gov/31106371/</a>', unsafe_allow_html=True)
     
-    con = st.container(border=True)
-    con.write("### SNP Calling:")
-    con.write("https://cegresources.icrisat.org/cicerseq/")
-    con.write("""
-    <p>Dr. Rajeev Varshney<br>
-    Research Program Director – Genetic Gains, Center of Excellence in Genomics & Systems Biology,<br>
-    Building # 300, ICRISAT, Patancheru, 502 324, Telangana, India.<br>
-    Office: +91 40 3071 3397<br>
-    Email: <a href="mailto:r.k.varshney@cgiar.org">r.k.varshney@cgiar.org</a></p>
-""", unsafe_allow_html=True)
-
-    con.write("""
-    <p>TY  - JOUR<br>
-    AU  - Toronto International Data Release Workshop Authors<br>
-    PY  - 2009<br>
-    DA  - 2009/09/01<br>
-    TI  - Prepublication data sharing<br>
-    JO  - Nature<br>
-    SP  - 168<br>
-    EP  - 170<br>
-    VL  - 461<br>
-    IS  - 7261<br>
-    AB  - Rapid release of prepublication data has served the field of genomics well. Attendees at a workshop in Toronto recommend extending the practice to other biological data sets.<br>
-    SN  - 1476-4687<br>
-    UR  - <a href="https://doi.org/10.1038/461168a" target="_blank">https://doi.org/10.1038/461168a</a><br>
-    DO  - 10.1038/461168a<br>
-    ID  - Toronto International Data Release Workshop Authors2009<br>
-    ER  -<br>
-    </p>
-    <a href="https://doi.org/10.1038/461168a" target="_blank"><p>Prepublication Data Sharing:<br>
-    Toronto International Data Release Workshop Authors (2009), Nature 461:168-170, <a href="https://doi.org/10.1038/461168a" target="_blank">https://doi.org/10.1038/461168a</a></p>
-""", unsafe_allow_html=True)
-
-    con = st.container(border=True)
-    con.write("### Cellular Localization:")
-    con.write("CELLO v.2.5: subCELlular Localization predictor - http://cello.life.nctu.edu.tw/")
-    con.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/15096640/" target="_blank">Yu CS, Lin CJ, Hwang JK: Predicting subcellular localization of proteins for Gram-negative bacteria by support vector machines based on n-peptide compositions. Protein Science 2004, 13:1402-1406.</a>', unsafe_allow_html=True)
-    con.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/16752418/" target="_blank">Yu CS, Chen YC, Lu CH, Hwang JK, Proteins: Structure, Function and Bioinformatics, 2006, 64:643-651.</a>', unsafe_allow_html=True)
-
-    con = st.container(border=True)
-    con.write("### Protein-Protein Interactions (PPI):")
-    con.write("STRING v12.0 - https://string-db.org/")
-    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/36370105/" target="_blank">Szklarczyk D, Kirsch R, Koutrouli M, Nastou K, Mehryary F, Hachilif R, Gable AL, Fang T, Doncheva NT, Pyysalo S, Bork P, Jensen LJ, von Mering C. The STRING database in 2023: protein-protein association networks and functional enrichment analyses for any sequenced genome of interest. Nucleic Acids Res. 2023 Jan 6;51(D1):D638-D646. doi: 10.1093/nar/gkac1000. PMID: 36370105; PMCID: PMC9825434.</a>', unsafe_allow_html=True)
-
     con = st.container(border=True)
     con.write("### PROMOTER Analysis:")
     con.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
-    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092.</a>', unsafe_allow_html=True)
+    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
+
+    con=st.container(border=True)
+    con.write("### miRNA Target:")
+    con.write("PmiREN (Source) - https://pmiren.com")
+    con.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""",unsafe_allow_html=True)
+    con.write("psRNATarget (Target) - https://www.zhaolab.org/psRNATarget/")
+    con.write("""(1) <a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""",unsafe_allow_html=True)
+    con.write("""(2) <a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""",unsafe_allow_html=True)
+    con.write("""(3) <a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""",unsafe_allow_html=True)
 
     con = st.container(border=True)
     con.write("### PlantRegMap:")
     con.write("PlantRegMap - http://plantregmap.gao-lab.org/")
-    con.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545.</a>', unsafe_allow_html=True)
-    con.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657.</a>', unsafe_allow_html=True)
-    con.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157.</a>', unsafe_allow_html=True)
+    con.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545. https://pubmed.ncbi.nlm.nih.gov/31701126/</a>', unsafe_allow_html=True)
+    con.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657. https://pubmed.ncbi.nlm.nih.gov/27924042/</a>', unsafe_allow_html=True)
+    con.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157. https://pubmed.ncbi.nlm.nih.gov/25750178/</a>', unsafe_allow_html=True)
+    
+    con = st.container(border=True)
+    con.write("### Protein-Protein Interactions (PPI):")
+    con.write("STRING v12.0 - https://string-db.org/")
+    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/36370105/" target="_blank">Szklarczyk D, Kirsch R, Koutrouli M, Nastou K, Mehryary F, Hachilif R, Gable AL, Fang T, Doncheva NT, Pyysalo S, Bork P, Jensen LJ, von Mering C. The STRING database in 2023: protein-protein association networks and functional enrichment analyses for any sequenced genome of interest. Nucleic Acids Res. 2023 Jan 6;51(D1):D638-D646. doi: 10.1093/nar/gkac1000. PMID: 36370105; PMCID: PMC9825434. https://pubmed.ncbi.nlm.nih.gov/36370105/</a>', unsafe_allow_html=True)
+
+    con = st.container(border=True)
+    con.write("### Cellular Localization:")
+    con.write("CELLO v.2.5: subCELlular Localization predictor - http://cello.life.nctu.edu.tw/")
+    con.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/15096640/" target="_blank">Yu CS, Lin CJ, Hwang JK: Predicting subcellular localization of proteins for Gram-negative bacteria by support vector machines based on n-peptide compositions. Protein Science 2004, 13:1402-1406. https://pubmed.ncbi.nlm.nih.gov/15096640/</a>', unsafe_allow_html=True)
+    con.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/16752418/" target="_blank">Yu CS, Chen YC, Lu CH, Hwang JK, Proteins: Structure, Function and Bioinformatics, 2006, 64:643-651. https://pubmed.ncbi.nlm.nih.gov/16752418/</a>', unsafe_allow_html=True)
+
+    con=st.container(border=True)
+    con.write("### Functional Annotation:")
+    con.write("GOATOOLS: A Python library for Gene Ontology analyses - https://pypi.org/project/goatools/")
+    con.write('<a href="https://www.nature.com/articles/s41598-018-28948-z" target="_blank">Klopfenstein, D.V., Zhang, L., Pedersen, B.S. et al. GOATOOLS: A Python library for Gene Ontology analyses. Sci Rep 8, 10872 (2018). https://doi.org/10.1038/s41598-018-28948-z</a>', unsafe_allow_html=True)
+    
+    con = st.container(border=True)
+    con.write("### Orthologous analysis:")
+    con.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/") 
+    con.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
     
     con=st.container(border=True)
-    con.write("### CRISPR Construct:")
-    con.write("CHOPCHOP - https://chopchop.cbu.uib.no")
-    con.write('<a href="https://pubmed.ncbi.nlm.nih.gov/31106371/" target="_blank">Labun K, Montague TG, Krause M, Torres Cleuren YN, Tjeldnes H, Valen E. CHOPCHOP v3: expanding the CRISPR web toolbox beyond genome editing. Nucleic Acids Res. 2019 Jul 2;47(W1):W171-W174. doi: 10.1093/nar/gkz365. PMID: 31106371; PMCID: PMC6602426.</a>', unsafe_allow_html=True)
+    con.write("### Machine Learning Backend:")
+    con.write("Scikit-learn - https://scikit-learn.org/")
+    con.write('<a href="https://jmlr.org/papers/v12/pedregosa11a.html" target="_blank">Pedregosa et al., Scikit-learn: Machine Learning in Python, JMLR 12, pp. 2825-2830, 2011. https://jmlr.org/papers/v12/pedregosa11a.html</a>', unsafe_allow_html=True)
+
+    con=st.container(border=True)
+    con.write("### Selenium WebDriver:")
+    con.write("Selenium - https://www.selenium.dev/")
+    con.write('<a href="https://www.selenium.dev/documentation/en/" target="_blank">Selenium Documentation. Selenium HQ. 2025. https://www.selenium.dev/documentation/en/</a>', unsafe_allow_html=True)
+
+    con=st.container(border=True)
+    con.write("### Web Framework:")
+    con.write("Streamlit - https://streamlit.io/")
+    con.write('<a href="https://streamlit.io/" target="_blank">Streamlit for Teams. Streamlit Inc., 2025. https://streamlit.io/</a>', unsafe_allow_html=True)   
     return
 
 def glossary_page():
     header_styled("Glossary","Key Terms and Definitions")
-    #st.title("Glossary")
-    #st.write("**Key Terms and Definitions**")
     glossary_entries = {
         'GS - Germinating Seedling': '- The early stage of seedling development where the seed begins to sprout and grow.',
         'S - Shoot': '- The above-ground part of the plant, including stems, leaves, and flowers.',
@@ -145,7 +154,6 @@ def glossary_page():
         for term, definition in filtered_entries.items():
             with st.expander(term):
                 st.write(definition)
-    #base_footer()
     return
 
 #@st.cache_data(show_spinner=False)
@@ -263,67 +271,49 @@ def meta_data_page():
     return
 
 
-#@st.cache_data(show_spinner=False)
-def get_video_url(video_path):
-    return generate_signed_url(video_path)
-
 def tutorials_page():
-    header_styled("Tutorials","This page helps you understand how to use the app through video tutorials.")
-    #st.write("**Learn how to use this interface**")
-    #st.write("This page helps you understand how to use the app through video tutorials. Follow the steps below:")
+    header_styled("Tutorials", "This page helps you understand how to use the app through video tutorials.")
 
-    navigation_video_url = get_video_url("Videos/navigation.mp4")
-    if navigation_video_url:
-        st.video(navigation_video_url, start_time=0)
-    else:
-        st.warning("Video not found or unable to generate URL.")
+    # Navigation Tutorial
+    st.subheader("Navigation Tutorial")
+    st.video("https://youtu.be/wkvhZbtgfvY")
 
+    # Registration and Login Tutorial
     st.subheader("Registration and Login")
-    register_video_url = get_video_url("Videos/register.mp4")
-    if register_video_url:
-        st.video(register_video_url, start_time=0)
-    else:
-        st.warning("Video not found or unable to generate URL.")
+    st.video("https://youtu.be/mWVMYyBNlDU")
     st.markdown("""
     1. Navigate to the Login page.
     2. Register for new users.
     3. Login using your credentials.
-    4. Unlock Search functionality and additional features.""")
+    4. Unlock Search functionality and additional features.
+    """)
 
+    # Single Task Tutorial
     st.subheader("Single Task Tutorial")
-    start_task1_video_url = get_video_url("Videos/start_task1.mp4")
-    if start_task1_video_url:
-        st.video(start_task1_video_url, start_time=0)
-    else:
-        st.warning("Video not found or unable to generate URL.")
+    st.video("https://youtu.be/ltAakrOmig0")
     st.markdown("""
     1. Navigate to the **Start Task** page.
     2. Enter the 8-character code when prompted.
     3. Click the **Start** button to begin the task.
-    4. Wait for the task to complete and view the results.""")
+    4. Wait for the task to complete and view the results.
+    """)
 
+    # Multi Task Tutorial
     st.subheader("Multi Task Tutorial")
-    start_task2_video_url = get_video_url("Videos/start_task2.mp4")
-    if start_task2_video_url:
-        st.video(start_task2_video_url, start_time=0)
-    else:
-        st.warning("Video not found or unable to generate URL.")
+    st.video("https://youtu.be/QcCkNOmBU5M")
     st.markdown("""
     1. Navigate to the **Start Task** page.
     2. Enter the 8-character code when prompted.
     3. Click the **Start** button to begin the task.
-    4. Wait for the task to complete and view the results.""")
+    4. Wait for the task to complete and view the results.
+    """)
 
+    # Glossary Tutorial
     st.subheader("Glossary Tutorial")
-    glossary_video_url = get_video_url("Videos/glossary.mp4")
-    if glossary_video_url:
-        st.video(glossary_video_url, start_time=0)
-    else:
-        st.warning("Video not found or unable to generate URL.")
+    st.video("https://youtu.be/mY4S24c-ADc")
 
-    # Call base_footer function
-    #base_footer()
     return
+
 
 #@st.cache_data(show_spinner=False)
 def get_image_url(image_path):
@@ -419,9 +409,9 @@ def about_page():
     
     def set_active_tab(tab_name):
         st.session_state.active_tab = tab_name
-    
-    # Create columns for buttons
+
     st.write(" ")
+    
     #col1, col2, col3, col4, col5 = st.columns(5)
     col2,col3,col4,col5=st.columns(4)
     #if col1.button("ABOUT US", key="btn_about",use_container_width=True):
@@ -440,7 +430,6 @@ def about_page():
         set_active_tab('TUTORIALS')
         st.rerun()
         
-    # Display content based on active tab
     if st.session_state.active_tab == 'ABOUT-US':
         display_about_content()
     elif st.session_state.active_tab == 'STATISTICS':

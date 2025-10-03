@@ -4,8 +4,6 @@ from pages.footer import base_footer
 
 def gene_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    #st.title("Gene Information Search")
-    #st.write("**It gives detailed insights about each Genomic Sequence, RNA Sequence, CDS Sequence, Promoter Sequences, Peptide Sequence and biochemical properties of each protein.**")
     header_styled("Gene Information Search", "It gives detailed insights about each Genomic Sequence, RNA Sequence, CDS Sequence, Promoter Sequences, Peptide Sequence and biochemical properties of each protein.")
     col1, col2 = st.columns(2)
 
@@ -33,19 +31,18 @@ def gene_info_page():
 
     if start_button:
         if tid:
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
+            matching_row = df[df['Transcript id'] == tid]
 
-                if not matching_row.empty:
-                    con=st.container(border=True)
-                    with con:
-                        st.subheader("Sequence data")
-                        show_sequence_data(tid)
+            if not matching_row.empty:
+                con=st.container(border=True)
+                with con:
+                    st.subheader("Sequence data")
+                    show_sequence_data(tid)
 
-                        st.subheader("Biochemical Properties")
-                        show_biochemical_properties(tid)
-                else:
-                    st.error(f"No match found for Gene ID: {tid}")
+                    st.subheader("Biochemical Properties")
+                    show_biochemical_properties(tid)
+            else:
+                st.error(f"No match found for Gene ID: {tid}")
 
             st.toast("Task completed successfully.")
             
@@ -53,40 +50,38 @@ def gene_info_page():
             mtid_list = [tid.strip() for tid in mtid.replace(",", " ").split()]
             mtid_list.sort()
 
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                found_ids = matching_rows['Transcript id'].unique().tolist()
-                not_found_ids = [x for x in mtid_list if x not in found_ids]
+            matching_rows = df[df['Transcript id'].isin(mtid_list)]
+            found_ids = matching_rows['Transcript id'].unique().tolist()
+            not_found_ids = [x for x in mtid_list if x not in found_ids]
 
-                if not matching_rows.empty:
-                    con = st.container(border=True)
-                    with con:
-                        st.subheader("\nSequences data")
-                        show_sequence_data(mtid_list, is_multi=True)
+            if not matching_rows.empty:
+                con = st.container(border=True)
+                with con:
+                    st.subheader("\nSequences data")
+                    show_sequence_data(mtid_list, is_multi=True)
 
-                        st.subheader("Biochemical Properties")
-                        show_biochemical_properties(mtid_list, is_multi=True)
+                    st.subheader("Biochemical Properties")
+                    show_biochemical_properties(mtid_list, is_multi=True)
 
-                if not_found_ids:
-                    st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
+            if not_found_ids:
+                st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
 
             st.toast("Task completed successfully.")
             
         elif locid:
             tid = process_locid(locid)
-            if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                matching_row = df[df['Transcript id'] == tid]
+            matching_row = df[df['Transcript id'] == tid]
 
-                if not matching_row.empty:
-                    con=st.container(border=True)
-                    with con:
-                        st.subheader("Sequence data")
-                        show_sequence_data(tid)
+            if not matching_row.empty:
+                con=st.container(border=True)
+                with con:
+                    st.subheader("Sequence data")
+                    show_sequence_data(tid)
 
-                        st.subheader("Biochemical Properties")
-                        show_biochemical_properties(tid)
-                else:
-                    st.error(f"No match found for NCBI ID: {locid}")
+                    st.subheader("Biochemical Properties")
+                    show_biochemical_properties(tid)
+            else:
+                st.error(f"No match found for NCBI ID: {locid}")
             
             st.toast("Task completed successfully.")
             
@@ -96,16 +91,15 @@ def gene_info_page():
                 mtid = process_mlocid(",".join(available))
                 mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
                 mtid_list.sort()
-                if 'Transcript id' in df.columns and 'lncRNA' in df.columns:
-                    matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                    if not matching_rows.empty:
-                        con = st.container(border=True)
-                        with con:
-                            st.subheader("\nSequences data")
-                            show_sequence_data(mtid_list, is_multi=True)
+                matching_rows = df[df['Transcript id'].isin(mtid_list)]
+                if not matching_rows.empty:
+                    con = st.container(border=True)
+                    with con:
+                        st.subheader("\nSequences data")
+                        show_sequence_data(mtid_list, is_multi=True)
 
-                            st.subheader("Biochemical Properties")
-                            show_biochemical_properties(mtid_list, is_multi=True)
+                        st.subheader("Biochemical Properties")
+                        show_biochemical_properties(mtid_list, is_multi=True)
                 st.toast("Task completed successfully.")
             if rejected:
                 st.error(f"No matches found for NCBI IDs: {', '.join(rejected)}")

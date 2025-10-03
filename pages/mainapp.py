@@ -7,7 +7,7 @@ from pages.security import connect_to_db
 
 def home_page():        
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    col1,col2,col3=st.columns([1,2,1])
+    col1,col2,col3=st.columns([1,3,1])
     with col1:
         con=st.container(border=False, key="con101hp")
         with con:
@@ -17,9 +17,13 @@ def home_page():
                 st.rerun()
         con=st.container(border=False, key="con102hp")
         with con:
-            if st.button("Primer Design", use_container_width=True, key="navPrimer", type="primary"):
+            #if st.button("Primer Design", use_container_width=True, key="navPrimer", type="primary"):
+            #    st.session_state["programmatic_nav"] = True
+            #    st.session_state["current_page"] = "PRIMER"
+            #    st.rerun()
+            if st.button("BLAST", use_container_width=True, key="navBlast", type="primary"):
                 st.session_state["programmatic_nav"] = True
-                st.session_state["current_page"] = "PRIMER"
+                st.session_state["current_page"] = "BLAST"
                 st.rerun()
         con=st.container(border=False, key="con103hp")
         with con:
@@ -27,65 +31,80 @@ def home_page():
                 st.session_state["programmatic_nav"] = True
                 st.session_state["current_page"] = "SNP-CALLING"
                 st.rerun()
-    col2.markdown(''
-        '<style>'
-        '    /* General Styles */'
-        '    .hp-body {'
-        '        font-family: Arial, sans-serif;'
-        '        margin: 0;'
-        '        padding: 0;'
-        '        color: #f5d7be;'
-        '    }'
-        '    .hp-container {'
-        '        max-width: 100%;'
-        '        min-height: 500px;'
-        '        background-color: #833c0d;'
-        '        margin: 0 auto;'
-        '        padding: 20px;'
-        '        border-radius: 1rem;'#2rem
-        '        transition: all 0.3s ease-in-out !important;'
-        '        box-shadow: 0 4px 8px rgba(0,0,0,0.1);'
-        '    }'
-        ' .hp-container:hover {'
-        '    background-color: rgba(197,91,17,1) !important;'
-        '    transition: all 0.3s ease-in-out !important;'
-        '}'
-        '    /* Paragraph Styles */'
-        '    .hp-paragraph {'
-        '        font-size: 1rem;'
-        '        line-height: 1.6;'
-        '        margin-bottom: 20px;'
-        '        text-align: justify; /* Text is now justified */'
-        '    }'
-        '    .hp-paragraph b {'
-        '        color: #e74c3c;'
-        '        font-weight: bold;'
-        '    }'
-        '    .hp-paragraph em {'
-        '        font-style: italic;'
-        '        text-decoration: underline;'
-        '    }'
-        '</style>'
-        '<div class="hp-body">'
-        '  <div class="hp-container">'
-        '    <!-- Heading and Subheading -->'
-        '    <p style="text-align: center; font-size: 3rem; margin-bottom: 5px; color: #fff; font-weight: bold;">Chickpea Omics Explorer</p>'
-        '    <p style="text-align: center; font-size: 1.2rem; color: #fff; margin-bottom: 10px; font-weight: bold;">CHICKPEA (<i>Cicer arietinum</i> L.) DATABASE</p>'
-        '    <!-- Paragraph with List and Special Effects -->'
-        '    <br><p class="hp-paragraph">'
-        '      Chickpea (<i>Cicer arietinum</i> L.), a major legume valued for its high protein content and predominantly cultivated in arid and semi-arid regions. With the advent of high throughput sequencing technologies vast amount of genomic and transcriptomic data have been generated. To effectively utilize this wealth of information, we developed AI-driven platform, the “CHICKPEA OMICS EXPLORER”. This interactive database integrates multiple genomic resources including Phytozome, NCBI, CicerSeq and the chickpea transcriptome database. It offers comprehensive tools for spatial-temporal gene expression profiling, motif discovery, RNA coding potential analysis, protein interaction networks, pathway enrichment analysis, SNP detection, and ortholog identification. By consolidating diverse datasets and analysis, the Chickpea Omics Explorer serves as a powerful resourse for trait dissection, molecular breeding and functional genomics research in chickpea.'
-        '    </p>'
-        '  </div>'
-        '</div>'
-        '', unsafe_allow_html=True)
+    l1,l2,l3=col2.columns([1,8,1])           
+    #l2.subheader("Site Search") 
+    home_input=l2.text_input(label=" ",value="",placeholder="Ca_00001, Ca_00002 ...",key="search_home_input",help="Search by Phytozome Gene ID or NCBI ID")
+
+    #home_input=l2.text_input(label="Site Search",value="",placeholder="Ca_00001, Ca_00002 ...",key="search_home_input",help="Search by Phytozome Gene ID or NCBI ID")
+    col2.markdown('''
+        <style>
+            /* General Styles */
+            .hp-body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                color: #f5d7be;
+            }
+            .hp-container {
+                max-width: 100%;
+                min-height: 520px;
+                max-height: 520px;  /* Original max-height */
+                background-color: #833c0d;
+                margin: 0 auto;
+                padding: 20px;
+                overflow-y: auto;
+                overflow-x: hidden; /* Disable horizontal scroll */
+                border-radius: 1rem;
+                transition: all 0.3s ease-in-out !important;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            .hp-container:hover {
+                background-color: rgba(197,91,17,1) !important;
+                transition: all 0.3s ease-in-out !important;
+            }
+            /* Paragraph Styles */
+            .hp-paragraph {
+                font-size: 1rem;
+                line-height: 1.6;
+                margin-bottom: 20px;
+                text-align: justify; /* Text is now justified */
+            }
+            .hp-paragraph b {
+                color: #e74c3c;
+                font-weight: bold;
+            }
+            .hp-paragraph em {
+                font-style: italic;
+                text-decoration: underline;
+            }
+            
+            /* Media query for small screens */
+            @media (max-width: 768px) {
+                .hp-container {
+                    max-height: none;  /* Remove max-height for small screens */
+                    overflow-x: hidden; /* Ensure no horizontal overflow */
+                }
+            }
+        </style>
+        <div class="hp-body">
+          <div class="hp-container">
+            <!-- Heading and Subheading -->
+            <p style="text-align: center; font-size: 3rem; margin-bottom: 5px; color: #fff; font-weight: bold;">Chickpea Omics Explorer</p>
+            <p style="text-align: center; font-size: 1.2rem; color: #fff; margin-bottom: 10px; font-weight: bold;">CHICKPEA (<i>Cicer arietinum</i> L.) DATABASE</p>
+            <!-- Paragraph with List and Special Effects -->
+            <br><p class="hp-paragraph">
+              Chickpea (<i>Cicer arietinum</i> L.), a major legume valued for its high protein content and predominantly cultivated in arid and semi-arid regions. With the advent of high throughput sequencing technologies, vast amounts of genomic and transcriptomic data have been generated. To effectively utilize this wealth of information, we developed an AI-driven platform, the “CHICKPEA OMICS EXPLORER”. This interactive database integrates multiple genomic resources including Phytozome, NCBI, CicerSeq, and the chickpea transcriptome database. It offers comprehensive tools for spatial-temporal gene expression profiling, motif discovery, RNA coding potential analysis, protein interaction networks, pathway enrichment analysis, SNP detection, and ortholog identification. By consolidating diverse datasets and analysis, the Chickpea Omics Explorer serves as a powerful resource for trait dissection, molecular breeding, and functional genomics research in chickpea.
+            </p>
+          </div>
+        </div>
+    ''', unsafe_allow_html=True)
     with col3:
         con=st.container(border=False, key="con04hp")
         with con:
             if st.button("Gene Structure", use_container_width=True, key="navGSDS", type="primary"):
-                st.write("This feature is under development. Please check back later.")
-                #st.session_state["programmatic_nav"] = True
-                #st.session_state["current_page"] = "SNP-CALLING"
-                #st.rerun()
+                st.session_state["programmatic_nav"] = True
+                st.session_state["current_page"] = "GSDS"
+                st.rerun()
         con=st.container(border=False, key="con05hp")
         with con:
             if st.button("Gene Map", use_container_width=True, key="navSNAP", type="primary"):
@@ -93,14 +112,30 @@ def home_page():
                 #st.session_state["programmatic_nav"] = True
                 #st.session_state["current_page"] = "GO-ANALYSIS"
                 #st.rerun()
+            #if st.button("Primer Design", use_container_width=True, key="navPrimer", type="primary"):
+            #    st.session_state["programmatic_nav"] = True
+            #    st.session_state["current_page"] = "PRIMER"
+            #    st.rerun()
+            
         con=st.container(border=False, key="con06hp")
         with con:
-            if st.button("CRISPR Construct", use_container_width=True, key="navCRISPR", type="primary"):
+            #if st.button("CRISPR Construct", use_container_width=True, key="navCRISPR", type="primary"):
+            #    st.session_state["programmatic_nav"] = True
+            #    st.session_state["current_page"] = "CRISPR"
+            #    st.rerun()
+            if st.button("Tools", use_container_width=True, key="navTools", type="primary"):
                 st.session_state["programmatic_nav"] = True
-                st.session_state["current_page"] = "CRISPR"
+                st.session_state["current_page"] = "TOOLS"
                 st.rerun()
     st.markdown("""
     <style>
+        .st-key-search_home_input input {
+            background-color: #FCD3AC;
+            color: #000 !important;
+        }
+        .st-key-search_home_input input::placeholder {
+            color: #2c2d2d !important;
+        }
     [data-testid="stBaseButton-primary"] div[data-testid="stMarkdownContainer"] p {
         font-size: 2.5rem !important;
         margin: 0 !important;
@@ -113,7 +148,7 @@ def home_page():
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        min-height: 150px !important;
+        min-height: 160px !important;
         background-color: #833c0d !important;  /* Default background color */
         transition: all 0.3s ease-in-out !important;
     }
@@ -121,14 +156,16 @@ def home_page():
     [data-testid="stBaseButton-primary"]:hover {
         background-color: rgba(197,91,17,1) !important;  /* Hover background color */
     }
-    
-    .stVerticalBlock.st-key-con03hp, .stVerticalBlock.st-key-con01hp, .stVerticalBlock.st-key-con02hp,  {
+    .st-key-con101hp, .st-key-con04hp {
+                margin-top: 5rem;
+    }    
+    .st-key-con03hp, .st-key-con01hp, .st-key-con02hp,  {
         background-color: #833c0d;
         padding: 20px;
         border-radius: 2rem;
         transition: all 0.3s ease-in-out;
     }
-    .stVerticalBlock.st-key-con03hp:hover, .stVerticalBlock.st-key-con01hp:hover, .stVerticalBlock.st-key-con02hp:hover {
+    .st-key-con03hp:hover, .st-key-con01hp:hover, .st-key-con02hp:hover {
         background-color: rgba(197,91,17,1); 
         box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); 
         outline: none;

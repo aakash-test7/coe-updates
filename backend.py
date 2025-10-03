@@ -453,6 +453,7 @@ def show_sequence_data(tid, is_multi=False):
             gene_code = format_sequence(matching_row['Genomic Sequence'].values[0])
             promote_code = format_sequence(matching_row['Promoter Sequence'].values[0])
             genomic_coordinates = matching_row['Genomic Coordinates'].values[0]
+            loc_id = matching_row['LOC ID'].values[0]
 
 
             # Display as code block with copy functionality
@@ -468,20 +469,20 @@ def show_sequence_data(tid, is_multi=False):
                 st.code(promote_code, language="text")
 
             combined_file_content = (
-                f">{tid}|{tid} Genomic Sequence\n{gene_code}\n\n"
-                f">{tid}|{tid} Transcript Sequence\n{transcript_code}\n\n"
-                f">{tid}|{tid} CDS Sequence\n{cds_code}\n\n"
-                f">{tid}|{tid} Peptide Sequence\n{peptide_code}\n\n"
-                f">{tid}|{tid} Promoter Sequence\n{promote_code}\n")
+                f">{tid}|{loc_id} Genomic Sequence\n{gene_code}\n\n"
+                f">{tid}|{loc_id} Transcript Sequence\n{transcript_code}\n\n"
+                f">{tid}|{loc_id} CDS Sequence\n{cds_code}\n\n"
+                f">{tid}|{loc_id} Peptide Sequence\n{peptide_code}\n\n"
+                f">{tid}|{loc_id} Promoter Sequence\n{promote_code}\n")
             col1,col2,col3=st.columns([1,2,1])
             with col2:
-                st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{tid}_{loc_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
-            header = f">{tid}|{tid}"
+            header = f">{tid}|{loc_id}"
             promote_file = f"{header}\n{promote_code}\n"
             col1,col2,col3=st.columns([1,2,1])
             with col2:
-                st.download_button(label="Download Promoter Sequence in FASTA Format (.txt)", data=promote_file, file_name=f"{tid}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                st.download_button(label="Download Promoter Sequence in FASTA Format (.txt)", data=promote_file, file_name=f"{tid}_{loc_id}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
             st.write("Paste the promoter sequence on the following link to get promoter region analysis!")
             st.write("https://bioinformatics.psb.ugent.be/webtools/plantcare/html/search_CARE_onCluster.html\n")
@@ -503,39 +504,40 @@ def show_sequence_data(tid, is_multi=False):
                 gene_code = format_sequence(matching_rows['Genomic Sequence'].values[0])
                 promote_code = format_sequence(matching_rows['Promoter Sequence'].values[0])
                 genomic_coordinates = matching_rows['Genomic Coordinates'].values[0]
+                loc_id = matching_rows['LOC ID'].values[0]
 
-                genomic_sequences += f">{t_id}\n{gene_code}\n\n"
-                transcript_sequences += f">{t_id}\n{transcript_code}\n\n"
-                cds_sequences += f">{t_id}\n{cds_code}\n\n"
-                peptide_sequences += f">{t_id}\n{peptide_code}\n\n"
-                promoter_sequences += f">{t_id}\n{promote_code}\n\n"
+                genomic_sequences += f">{t_id} | {loc_id}\n{gene_code}\n\n"
+                transcript_sequences += f">{t_id} | {loc_id}\n{transcript_code}\n\n"
+                cds_sequences += f">{t_id} | {loc_id}\n{cds_code}\n\n"
+                peptide_sequences += f">{t_id} | {loc_id}\n{peptide_code}\n\n"
+                promoter_sequences += f">{t_id} | {loc_id}\n{promote_code}\n\n"
 
-                with st.expander(f"{t_id} Genomic Sequence (Genomic Coordinates - {genomic_coordinates})"):
+                with st.expander(f"{t_id} | {loc_id} Genomic Sequence (Genomic Coordinates - {genomic_coordinates})"):
                     st.code(gene_code, language="text")
-                with st.expander(f"{t_id} Transcript Sequence"):
+                with st.expander(f"{t_id} | {loc_id} Transcript Sequence"):
                     st.code(transcript_code, language="text")
-                with st.expander(f"{t_id} CDS Sequence"):
+                with st.expander(f"{t_id} | {loc_id} CDS Sequence"):
                     st.code(cds_code, language="text")
-                with st.expander(f"{t_id} Peptide Sequence"):
+                with st.expander(f"{t_id} | {loc_id} Peptide Sequence"):
                     st.code(peptide_code, language="text")
-                with st.expander(f"{t_id} Promoter Sequence (Genomic Sequences 2kb upstream to the transcription start site)"):
+                with st.expander(f"{t_id} | {loc_id} Promoter Sequence (Genomic Sequences 2kb upstream to the transcription start site)"):
                     st.code(promote_code, language="text")
 
                 combined_file_content = (
-                    f">{t_id}|{t_id} Genomic Sequence\n{gene_code}\n\n"
-                    f">{t_id}|{t_id} Transcript Sequence\n{transcript_code}\n\n"
-                    f">{t_id}|{t_id} CDS Sequence\n{cds_code}\n\n"
-                    f">{t_id}|{t_id} Peptide Sequence\n{peptide_code}\n\n"
-                    f">{t_id}|{t_id} Promoter Sequence\n{promote_code}\n")
+                    f">{t_id}|{loc_id} Genomic Sequence\n{gene_code}\n\n"
+                    f">{t_id}|{loc_id} Transcript Sequence\n{transcript_code}\n\n"
+                    f">{t_id}|{loc_id} CDS Sequence\n{cds_code}\n\n"
+                    f">{t_id}|{loc_id} Peptide Sequence\n{peptide_code}\n\n"
+                    f">{t_id}|{loc_id} Promoter Sequence\n{promote_code}\n")
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
-                    st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                    st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{t_id}_{loc_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
-                header = f">{t_id}|{t_id}"
+                header = f">{t_id}|{loc_id}"
                 promote_file = f"{header}\n{promote_code}\n"
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
-                    st.download_button(label="Download Promoter Sequence in FASTA Format (.txt)", data=promote_file, file_name=f"{t_id}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
+                    st.download_button(label="Download Promoter Sequence in FASTA Format (.txt)", data=promote_file, file_name=f"{t_id}_{loc_id}_promoter_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
 
                 st.write(f"Paste the promoter sequence for {t_id} on the following link to get promoter region analysis!")
                 st.write("https://bioinformatics.psb.ugent.be/webtools/plantcare/html/search_CARE_onCluster.html\n")

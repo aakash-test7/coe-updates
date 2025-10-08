@@ -1,12 +1,286 @@
 import streamlit as st
 import time
 import pandas as pd
-from backend import user_input_menu, multi_user_input_menu, process_locid, process_mlocid, header_styled
+from backend import user_input_menu, multi_user_input_menu, process_locid, process_mlocid, header_styled, process_tid, df, prop_df, protein_df, cello_df, GO_df, df_28, pfam_df, miRNA_df, tf_df, orthologs_df, paralogs_df
 from pages.footer import base_footer
 from pages.security import connect_to_db
 
+if "site_search_input_transcript" not in st.session_state:
+    st.session_state["site_search_input_transcript"] = ""
+if "site_search_input_loc" not in st.session_state:
+    st.session_state["site_search_input_loc"] = ""
+
+def sanitize_input(user_input):
+    items = [item.strip() for item in user_input.replace(",", " ").split()]
+    items = list(set([item for item in items if item]))
+    return items
+
+def check_data_availability(search_terms):
+    """Check which data is available for the search terms and return availability flags"""
+    availability = {
+        'sequence_data': False,
+        'biochemical_properties': False,
+        'protein_ppi': False,
+        'cellular_localization': False,
+        'go_kegg': False,
+        'fpkm_matrix': False,
+        'df28_matrix': False,
+        'pfam_matrix': False,
+        'rna_data': False,
+        'lncrna_data': False,
+        'mirna_data': False,
+        'transcription_factors': False,
+        'orthologs': False,
+        'paralogs': False
+    }
+    
+    if isinstance(search_terms, str):
+        search_terms = [search_terms]
+    
+    for term in search_terms:
+        seq_match = df[(df['Transcript id'] == term) | (df['LOC ID'] == term)]
+        if not seq_match.empty:
+            sequence_cols = ['Cds Sequence', 'Peptide Sequence', 'Transcript Sequence', 'Genomic Sequence', 'Promoter Sequence']
+            availability['sequence_data'] = any(
+                col in seq_match.columns and not seq_match[col].isna().all() and any(seq_match[col].str.len() > 0)
+                for col in sequence_cols
+            )
+            
+            availability['fpkm_matrix'] = True
+            availability['rna_data'] = 'mRNA' in seq_match.columns and not seq_match['mRNA'].isna().all()
+            availability['lncrna_data'] = 'lncRNA' in seq_match.columns and not seq_match['lncRNA'].isna().all()
+        
+        # Biochemical properties
+        prop_match = prop_df[prop_df['Transcript id'] == term]
+        if not prop_match.empty:
+            prop_cols = ['Total Amino Acids', 'Molecular Weight (Da)', 'Theoretical pI']
+            availability['biochemical_properties'] = any(
+                col in prop_match.columns and not prop_match[col].isna().all()
+                for col in prop_cols
+            )
+        
+        # Protein PPI data
+        protein_match = protein_df[(protein_df['Transcript id'] == term) | (protein_df['preferredName'] == term)]
+        if not protein_match.empty:
+            protein_cols = ['identity', 'bitscore', 'preferredName']
+            availability['protein_ppi'] = any(
+                col in protein_match.columns and not protein_match[col].isna().all()
+                for col in protein_cols
+            )
+        
+        # Cellular localization
+        cello_match = cello_df[cello_df['Transcript id'] == term]
+        if not cello_match.empty:
+            loc_cols = ['Extracellular', 'Plasma membrane', 'Cytoplasmic', 'Nuclear']
+            availability['cellular_localization'] = any(
+                col in cello_match.columns and not cello_match[col].isna().all()
+                for col in loc_cols
+            )
+        
+        # GO KEGG data
+        GO_match = GO_df[GO_df['Transcript id'] == term]
+        if not GO_match.empty:
+            go_cols = ['GO (molecular function)', 'GO (cellular component)', 'KEGG Pathway']
+            availability['go_kegg'] = any(
+                col in GO_match.columns and not GO_match[col].isna().all()
+                for col in go_cols
+            )
+        
+        # DF28 matrix data
+        df28_match = df_28[(df_28['Chickpea_Id'] == term) | (df_28['LOC ID'] == term)]
+        if not df28_match.empty:
+            expr_cols = ['Ger_Coleoptile', 'Rep_Buds', 'Rep_Flower', 'Veg_Leaf']
+            availability['df28_matrix'] = any(
+                col in df28_match.columns and not df28_match[col].isna().all()
+                for col in expr_cols
+            )
+        
+        # Pfam matrix data
+        pfam_match = pfam_df[(pfam_df['Transcript id'] == term) | (pfam_df['LOC ID'] == term)]
+        if not pfam_match.empty:
+            pfam_cols = ['Pfam ID', 'Pfam Domain']
+            availability['pfam_matrix'] = any(
+                col in pfam_match.columns and not pfam_match[col].isna().all()
+                for col in pfam_cols
+            )
+        
+        # miRNA data
+        mirna_match = miRNA_df[miRNA_df['Target_Acc.'] == term]
+        if not mirna_match.empty:
+            mirna_cols = ['Expectation', 'UPE$']
+            availability['mirna_data'] = any(
+                col in mirna_match.columns and not mirna_match[col].isna().all()
+                for col in mirna_cols
+            )
+        
+        # Transcription factors
+        tf_match = tf_df[tf_df['Gene_ID'] == term]
+        if not tf_match.empty:
+            tf_cols = ['Family', 'TF_ID']
+            availability['transcription_factors'] = any(
+                col in tf_match.columns and not tf_match[col].isna().all()
+                for col in tf_cols
+            )
+        
+        if orthologs_df is not None and not orthologs_df.empty:
+            def extract_gene_id(species_string):
+                if '|' in species_string:
+                    return species_string.split('|')[-1]  # Get part after '|'
+                return species_string
+            
+            species_a_ids = orthologs_df['Species A'].astype(str).apply(extract_gene_id)
+            species_b_ids = orthologs_df['Species B'].astype(str).apply(extract_gene_id)
+            
+            ortho_match = orthologs_df[
+                (species_a_ids == term) | (species_b_ids == term)
+            ]
+            if not ortho_match.empty:
+                availability['orthologs'] = True
+
+        # Paralogs data - exact matching
+        if paralogs_df is not None and not paralogs_df.empty:
+            def extract_gene_id(species_string):
+                if '|' in species_string:
+                    return species_string.split('|')[-1]  # Get part after '|'
+                return species_string
+            
+            species_a_ids = paralogs_df['Species A'].astype(str).apply(extract_gene_id)
+            species_b_ids = paralogs_df['Species B'].astype(str).apply(extract_gene_id)
+            
+            para_match = paralogs_df[
+                (species_a_ids == term) | (species_b_ids == term)
+            ]
+            if not para_match.empty:
+                availability['paralogs'] = True
+    
+    return availability
+
+def get_available_buttons(availability):
+    """Return list of available data buttons based on availability flags"""
+    buttons = []
+    
+    button_config = {
+        'sequence_data': 'Sequence Data',
+        'biochemical_properties': 'Biochemical Properties',
+        'protein_ppi': 'Protein PPI',
+        'cellular_localization': 'Cellular Localization',
+        'go_kegg': 'GO & KEGG',
+        'fpkm_matrix': 'FPKM Matrix',
+        'df28_matrix': 'Expression Atlas',
+        'rna_data': 'mRNA Data',
+        'lncrna_data': 'lncRNA Data',
+        'mirna_data': 'miRNA Targets',
+        'transcription_factors': 'Transcription Factors',
+        'orthologs': 'Orthologs',
+        'paralogs': 'Paralogs'
+    }
+    
+    for data_type, button_label in button_config.items():
+        if availability.get(data_type, False):
+            buttons.append(button_label)
+    
+    return buttons
+def display_available_buttons(available_buttons, search_terms, is_multi=False):
+    """Display available data buttons in a grid layout"""
+    if not available_buttons:
+        st.warning("No data found for the provided search terms.")
+        return
+    
+    st.success(f"Found data for following categories:")
+    
+    if len(available_buttons) >= 2:
+        if st.button("Comprehensive Search", use_container_width=True, key="btn_comprehensive_search"):
+            st.session_state["programmatic_nav"] = True
+            st.session_state["current_page"] = "SEARCH"
+            st.rerun()
+    
+    for i, button_label in enumerate(available_buttons):
+        if st.button(button_label, use_container_width=True, key=f"btn_{button_label}"):
+            # Map button labels to page names
+            page_mapping = {
+                'Sequence Data': 'GENE-INFO',
+                'Biochemical Properties': 'GENE-INFO', 
+                'Protein PPI': 'PPI',
+                'Cellular Localization': 'Localization',
+                'GO & KEGG': 'GO-KEGG',
+                'FPKM Matrix': 'Tissue Specific Expression',
+                'Expression Atlas': 'Tissue Specific Expression',
+                'mRNA Data': 'RNA-type',
+                'lncRNA Data': 'RNA-type',
+                'miRNA Targets': 'miRNA-target',
+                'Transcription Factors': 'Transcription Factors',
+                'Orthologs': 'ORTHOLOGS/PARALOGS',
+                'Paralogs': 'ORTHOLOGS/PARALOGS'
+            }
+            
+            page_name = page_mapping.get(button_label, 'SEARCH')  # Default to SEARCH
+            
+            st.session_state.selected_button = button_label
+            st.session_state.search_terms = search_terms
+            st.session_state.is_multi = is_multi
+            st.session_state["programmatic_nav"] = True
+            st.session_state["current_page"] = page_name
+            st.rerun()
+
+def process_search_terms(search_terms):
+    """Process search terms and convert between Transcript ID and LOC ID if needed"""
+    processed_terms = []
+    loc_ids = []
+    transcript_ids = []
+    
+    for term in search_terms:
+        # Check if it's a Transcript ID (starts with Ca_)
+        # Guard: ensure term is a string
+        if not isinstance(term, str):
+            term = str(term)
+
+        if term.startswith('Ca_'):
+            transcript_ids.append(term)
+            # Try to find corresponding LOC ID
+            loc_id = process_tid(term, df, show_output=False)
+            if loc_id:
+                loc_ids.append(loc_id)
+        # Check if it's likely a LOC ID or other identifier
+        else:
+            loc_ids.append(term)
+            # Try to find corresponding Transcript ID
+            transcript_id = process_locid(term, show_output=False)
+            if transcript_id:
+                transcript_ids.append(transcript_id)
+    
+    # Clean and deduplicate returned IDs. This avoids mixing floats/NaNs with strings
+    def _clean_and_dedupe(id_list):
+        cleaned = []
+        for x in id_list:
+            if x is None:
+                continue
+            try:
+                if pd.isna(x):
+                    continue
+            except Exception:
+                pass
+            s = str(x).strip()
+            if not s:
+                continue
+            if s.lower() == 'nan':
+                continue
+            cleaned.append(s)
+        return sorted(list(set(cleaned)))
+
+    transcript_ids = _clean_and_dedupe(transcript_ids)
+    loc_ids = _clean_and_dedupe(loc_ids)
+
+    return transcript_ids, loc_ids
+
 def home_page():        
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    l1,l2,l3=st.columns([1,3,1])           
+    l2.markdown("""<div style='text-align: center; margin-bottom: -50px;'><h2 style='margin: 0;'>Site Search</h2></div>""",unsafe_allow_html=True)
+
+    home_input=l2.text_input(label=" ",value="",placeholder="Ca_00001, Ca_00002, LOC101511858, LOC101496413 ...",key="search_home_input",help="Search by Phytozome Gene ID or NCBI ID")
+    c1,c2,col3=l2.columns([1,3,1])
+    home_button_search = c2.button("Search", use_container_width=True, key="home_search_button", type="secondary")
+                    
     col1,col2,col3=st.columns([1,3,1])
     with col1:
         con=st.container(border=False, key="con101hp")
@@ -31,11 +305,7 @@ def home_page():
                 st.session_state["programmatic_nav"] = True
                 st.session_state["current_page"] = "SNP-CALLING"
                 st.rerun()
-    l1,l2,l3=col2.columns([1,8,1])           
-    #l2.subheader("Site Search") 
-    home_input=l2.text_input(label=" ",value="",placeholder="Ca_00001, Ca_00002 ...",key="search_home_input",help="Search by Phytozome Gene ID or NCBI ID")
-
-    #home_input=l2.text_input(label="Site Search",value="",placeholder="Ca_00001, Ca_00002 ...",key="search_home_input",help="Search by Phytozome Gene ID or NCBI ID")
+    
     col2.markdown('''
         <style>
             /* General Styles */
@@ -101,17 +371,16 @@ def home_page():
     with col3:
         con=st.container(border=False, key="con04hp")
         with con:
+            if st.button("Query Search", use_container_width=True, key="navQuery", type="primary"):
+                st.session_state["programmatic_nav"] = True
+                st.session_state["current_page"] = "QUERY"
+                st.rerun()
+        con=st.container(border=False, key="con05hp")
+        with con:
             if st.button("Gene Structure", use_container_width=True, key="navGSDS", type="primary"):
                 st.session_state["programmatic_nav"] = True
                 st.session_state["current_page"] = "GSDS"
                 st.rerun()
-        con=st.container(border=False, key="con05hp")
-        with con:
-            if st.button("Gene Map", use_container_width=True, key="navSNAP", type="primary"):
-                st.write("This feature is under development. Please check back later.")
-                #st.session_state["programmatic_nav"] = True
-                #st.session_state["current_page"] = "GO-ANALYSIS"
-                #st.rerun()
             #if st.button("Primer Design", use_container_width=True, key="navPrimer", type="primary"):
             #    st.session_state["programmatic_nav"] = True
             #    st.session_state["current_page"] = "PRIMER"
@@ -157,7 +426,7 @@ def home_page():
         background-color: rgba(197,91,17,1) !important;  /* Hover background color */
     }
     .st-key-con101hp, .st-key-con04hp {
-                margin-top: 5rem;
+                margin-top: 0rem;
     }    
     .st-key-con03hp, .st-key-con01hp, .st-key-con02hp,  {
         background-color: #833c0d;
@@ -173,13 +442,38 @@ def home_page():
     } 
     </style>""", unsafe_allow_html=True)
     base_footer()
+    #if home_button_search:
+    if home_input:
+        search_terms = sanitize_input(home_input)
+        if search_terms:
+            ti,li = process_search_terms(search_terms)
+            st.session_state["site_search_input_transcript"] = ti
+            st.session_state["site_search_input_loc"] = li
+
+            with st.spinner("Checking data availability..."):
+                availability = check_data_availability(ti)
+            
+            is_multi = len(ti) > 1
+            available_buttons = get_available_buttons(availability)
+            
+            with c2.popover("Available Data", use_container_width=True):
+                display_available_buttons(available_buttons, ti, is_multi)
     return
 
 def search_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
     if st.session_state.get('authenticated', False):
         username = st.session_state.get('username')
-    header_styled("Search", "Users can get detailed genomic information by inserting Phytozome/NCBI gene IDs. The search is case sensitive. For example, entering Ca_00001 will provide detailed information including genomic sequence, transcript sequence, CDS, peptide sequence, promoter sequence, biochemical properties, protein-protein interaction, cellular localization, Gene Ontology and KEGG analysis, SNP calling, lncRNA, miRNA targets, transcription factors, orthologs/paralogs, and protein model prediction.")
+    if "first_search_visit" not in st.session_state:
+        st.session_state["first_search_visit"] = True
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_spatial", type="primary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.session_state["first_search_visit"] = True
+            st.rerun()
+    header_styled("Search", "Users can get detailed genomic information by inserting Phytozome/NCBI gene IDs. The search is case sensitive. For example, entering Ca_00001 will provide detailed information including genomic sequence, transcript sequence, CDS, protein sequence, promoter sequence, biochemical properties, protein-protein interaction, cellular localization, Gene Ontology and KEGG analysis, SNP calling, lncRNA, miRNA targets, transcription factors, orthologs/paralogs, and protein model prediction.")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -203,8 +497,30 @@ def search_page():
     con1, con2, con3 = st.columns([2, 2, 2])
     with con2:
         start_button = st.button("Search", use_container_width=True, key="Searchbutton1")
+    # Main logic for Streamlit interface
+    if st.session_state.get("programmatic_nav", False) and tid == "" and mtid == "" and locid == "" and mlocid == "" and st.session_state.get("first_search_visit", True):
+        con = st.container(border=True)
+        st.session_state["first_search_visit"] = False
+        if not st.session_state.get("logged_in", False):
+            with con:
+                st.info("You need to login to perform this action. Redirecting to login page in 5 seconds...")
+                time.sleep(5)
+                st.session_state["redirect_to_login"] = True
+                st.rerun()
+        else:
+            temp_list = st.session_state.get("site_search_input_transcript")
+            temp_list = " ".join(temp_list)
+            st.session_state["site_search_input_transcript"] = []
+            mtid_list = [item.strip() for item in temp_list.replace(",", " ").split()]
+            mtid_list = list(set(mtid_list))
+            mtid = ",".join(mtid_list)
+            with con:
+                st.subheader("Search Results")
+                result = multi_user_input_menu(mtid)
+                st.write(result)
+            st.toast("Task completed successfully.")
 
-    if start_button:
+    elif start_button:
         if not st.session_state.get("logged_in", False):
             if tid or mtid or locid or mlocid:
                 st.warning("You need to login to perform this action. Redirecting to login page in 5 seconds...")
@@ -239,7 +555,6 @@ def search_page():
                     chunk = mtid[i:i + chunk_size]
                     cursor.execute(query_mtid, (username, chunk))
                 
-                #cursor.execute(query_mtid, (username, mtid))
             elif locid:
                 if 1 <= len(locid) <= 20:
                     tid = process_locid(locid)
@@ -266,7 +581,6 @@ def search_page():
                 for i in range(0, len(mlocid), chunk_size):
                     chunk = mlocid[i:i + chunk_size]
                     cursor.execute(query_mlocid, (username, chunk))
-                #cursor.execute(query_mlocid, (username, mlocid))
             else:
                 st.warning("Need either a Gene ID or NCBI ID to proceed.")
             conn.commit()

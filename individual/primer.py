@@ -1,7 +1,7 @@
 import streamlit as st
-from backend import process_locid, process_mlocid, df, show_sequence_data_p, mlocid_error,header_styled,show_sequence_data_cds
+from backend import process_locid, process_mlocid, df, show_sequence_data_p, mlocid_error,header_styled,show_sequence_data_cds,run_blast_and_get_primer
 from pages.footer import base_footer
-
+import pandas as pd
 def primer_cloning():
     col1, col2 = st.columns(2)
     with col1:
@@ -138,82 +138,126 @@ def primer_qrt():
 
     if start_button:
         if tid:
-            matching_row = df[df['Transcript id'] == tid]
+            match = df[df["Transcript id"] == tid]
+            if not match.empty:
+                cds_seq = match["Cds Sequence"].values[0]
+                if pd.notna(cds_seq) and cds_seq.strip():
+                    temp_id = cds_seq
+                    con=st.container(border=True)
+                    with con:
+                        st.subheader("Primer Design")
+                        with st.spinner("Designing Primer...", show_time=True):
+                            rid = run_blast_and_get_primer(temp_id)
+                            if rid:
+                                st.success(f"JOB ID obtained: `{rid}`")
+                                result_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={rid}"
 
-            if not matching_row.empty:
-                con=st.container(border=True)
-                with con:
-                    st.subheader("Sequence data")
-                    show_sequence_data_cds(tid)
-
-                    with st.expander("Primer Design", expanded=True):
-                        st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://www.primer3plus.com/" width="900" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
-
+                                st.components.v1.iframe(src=result_url, height=1000, scrolling=True)
+                            else:
+                                st.error("Failed to obtain JOB ID. Please try again.")
+                else:
+                    st.error(f"Cds Sequence is empty for Gene ID: {tid}")
             else:
                 st.error(f"No match found for Gene ID: {tid}")
+        
+        # CASE 2: Multiple Transcript IDs
+        if mtid:
+            temp_vars = {}
+            not_found = []
+            counter = 1
 
-            st.toast("Task completed successfully.")
-            
-        elif mtid:
-            mtid_list = [tid.strip() for tid in mtid.replace(",", " ").split()]
-            mtid_list.sort()
+            for gene_id in mtid_list:
+                match = df[df["Transcript id"] == gene_id]
+                if not match.empty:
+                    cds_seq = match["Cds Sequence"].values[0]
+                    con=st.container(border=True)
+                    with con:
+                        st.subheader("Primer Design")
+                        if pd.notna(cds_seq) and cds_seq.strip():
+                            var_name = f"temp_multi_id{counter}"
+                            temp_vars[var_name] = cds_seq
+                            with st.spinner(f"Designing Primer for {gene_id}...", show_time=True):
+                                rid = run_blast_and_get_primer(cds_seq)
+                                if rid:
+                                    result_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={rid}"
+                                    with st.expander(f"Primer Design Result for {gene_id} (JOB ID: {rid})", expanded=True):
+                                        st.components.v1.iframe(src=result_url, height=1000, scrolling=True)
+                                else:
+                                    st.warning(f"Primer Design failed or no JOB ID returned for Gene ID: {gene_id}")
+                            counter += 1
+                        else:
+                            not_found.append(gene_id)
+                else:
+                    not_found.append(gene_id)
 
-            matching_rows = df[df['Transcript id'].isin(mtid_list)]
-            found_ids = matching_rows['Transcript id'].unique().tolist()
-            not_found_ids = [x for x in mtid_list if x not in found_ids]
+            if not_found:
+                st.error(f"No match found for Gene ID(s): {', '.join(not_found)}")
 
-            if not matching_rows.empty:
-                con = st.container(border=True)
-                with con:
-                    st.subheader("\nSequences data")
-                    show_sequence_data_cds(mtid_list, is_multi=True)
-                    with st.expander("Primer Design", expanded=True):
-                        st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://www.primer3plus.com/" width="900" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+        # CASE 3: Single LOC ID
+        if locid:
+            match = df[df["LOC ID"] == locid]
+            if not match.empty:
+                cds_seq = match["Cds Sequence"].values[0]
+                if pd.notna(cds_seq) and cds_seq.strip():
+                    temp_id = cds_seq
+                    con=st.container(border=True)
+                    with con:
+                        st.subheader("Primer Design")
+                        with st.spinner("Designing Primer...", show_time=True):
+                            rid = run_blast_and_get_primer(temp_id)
+                            if rid:
+                                st.success(f"JOB ID obtained: `{rid}`")
+                                result_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={rid}"
 
-            if not_found_ids:
-                st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
-
-            st.toast("Task completed successfully.")
-            
-        elif locid:
-            tid = process_locid(locid)
-            matching_row = df[df['Transcript id'] == tid]
-
-            if not matching_row.empty:
-                con=st.container(border=True)
-                with con:
-                    st.subheader("Sequence data")
-                    show_sequence_data_cds(tid)
-                    with st.expander("Primer Design", expanded=True):
-                        st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://www.primer3plus.com/" width="900" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
-
+                                st.components.v1.iframe(src=result_url, height=1000, scrolling=True)
+                            else:
+                                st.error("Failed to obtain JOB ID. Please try again.")
+                else:
+                    st.error(f"Cds Sequence is empty for NCBI ID: {locid}")
             else:
                 st.error(f"No match found for NCBI ID: {locid}")
-            
-            st.toast("Task completed successfully.")
-            
-        elif mlocid:
-            available, rejected = mlocid_error(mlocid)
-            if available:
-                mtid = process_mlocid(",".join(available))
-                mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
-                mtid_list.sort()
-                matching_rows = df[df['Transcript id'].isin(mtid_list)]
-                if not matching_rows.empty:
-                    con = st.container(border=True)
+
+        # CASE 4: Multiple LOC IDs
+        if mlocid:
+            temp_vars = {}
+            not_found = []
+            failed_blast = []
+            counter = 1
+
+            for loc in mlocid_list:
+                match = df[df["LOC ID"] == loc]
+                if not match.empty:
+                    cds_seq = match["Cds Sequence"].values[0]
+                    con=st.container(border=True)
                     with con:
-                        st.subheader("\nSequences data")
-                        show_sequence_data_cds(mtid_list, is_multi=True)
+                        st.subheader("BLAST Results")
+                        if pd.notna(cds_seq) and cds_seq.strip():
+                            var_name = f"temp_multi_id{counter}"
+                            temp_vars[var_name] = cds_seq
+                            # Run BLAST
+                            with st.spinner(f"Running BLAST for {loc}...", show_time=True):
+                                rid = run_blast_and_get_primer(cds_seq)
 
-                        with st.expander("Primer Design", expanded=True):
-                            st.markdown("""<div style='display: flex; justify-content: center;'><iframe src="https://www.primer3plus.com/" width="900" height="700" style="border:none;"></iframe></div>""", unsafe_allow_html=True)
+                                if rid:
+                                    st.success(f"JOB ID obtained for {loc}: `{rid}`")
+                                    result_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={rid}"
+                                    with st.expander(f"Designing Primer for {loc} (JOB ID: {rid})", expanded=True):
+                                        st.components.v1.iframe(src=result_url, height=1000, scrolling=True)
+                                else:
+                                    failed_blast.append(loc)
+                            counter += 1
+                        else:
+                            not_found.append(loc)
+                else:
+                    not_found.append(loc)
 
-                st.toast("Task completed successfully.")
-            if rejected:
-                st.error(f"No matches found for NCBI IDs: {', '.join(rejected)}")
+            # Display errors after loop
+            if not_found:
+                st.error(f"No match found or empty sequence for NCBI ID(s): {', '.join(not_found)}")
 
-            st.toast("Task completed successfully.")
-            
+            if failed_blast:
+                st.warning(f"Primer Design failed or no JOB ID returned for NCBI ID(s): {', '.join(failed_blast)}")
+
     elif tid == "":
         st.warning("Need Gene ID to proceed.")
     else:
@@ -222,7 +266,15 @@ def primer_qrt():
     return
 
 def primer_info_page():
-    st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    #st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    
+    # Show "Back to Home" button if navigation was programmatic
+    #if st.session_state.get("programmatic_nav", False):
+    #    if st.button("← Back to Home", key="back_to_home_primer", type="secondary"):
+    #        st.session_state["programmatic_nav"] = False
+    #        st.session_state["current_page"] = "HOME"
+    #        st.rerun()
+    
     header_styled("PRIMER Designing for Gene Cloning and Expression Analysis", "Enter the Gene ID or NCBI ID to fetch the target sequence and then paste the nucleotide sequence in the Primer design Template section and get the set of primers just clicking Pick primers.")
     if 'active_primer' not in st.session_state:
         st.session_state.active_primer = 'Cloning'

@@ -9,7 +9,6 @@ import individual
 pages = ["HOME", "SEARCH", "Tissue Specific Expression", "RNA-type", "miRNA-target","Transcription Factors", "PPI", "Localization", "GO-KEGG", "ORTHOLOGS/PARALOGS", "ABOUT US", "LOGIN"]
 logo_path = ("logo1.svg")
 options={"use_padding": True, "show_menu":False}
-
 styles = {
     "nav": {
         "background-color": "rgb(197, 91, 17)",  # Background color of the navigation bar
@@ -170,19 +169,19 @@ st.markdown(
                 font-size: 0.9rem;      /* Slightly reduce font size for mobile */
             }
         }
-        @media (min-width: 1950px) {
+        @media (min-width: 1920px) {
             .stNavBar-nav {
                 overflow-x: hidden; /* Disable horizontal scrolling */
             }
         }
 
-        @media (max-width: 1960px) {
+        @media (max-width: 1919px) { /*1960px*/
             .stNavBar-nav {
                 overflow-x: auto; /* Enable horizontal scrolling */
             }
         }
 
-        @media (min-width: 1950px) {
+        @media (min-width: 1910px) { /*1950px*/
             .stNavBar-span {
                 flex: 1; /* Ensure items occupy full width */
                 text-align: center; /* Center align text */
@@ -242,6 +241,28 @@ st.markdown(
         .stTextInput input::placeholder {
             color: lightgray !important;
         }
+        .streamlit-expanderContent pre, .element-container pre {
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            overflow-x: auto !important;
+        }
+        
+        /* Target st.code specifically for text wrapping */
+        .streamlit-expanderContent pre code, .element-container pre code {
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            display: block !important;
+        }
+        
+        /* Ensure st.code container doesn't create horizontal scroll */
+        [data-testid="stCode"] {
+            overflow-x: hidden !important;
+        }
+        
+        [data-testid="stCode"] > div {
+            overflow-x: hidden !important;
+        }
     </style>
     """,
     unsafe_allow_html=True,
@@ -266,6 +287,7 @@ functions = {
     "BLAST": individual.blast_info_page,
     "TOOLS": individual.tools_page,
     "GSDS": individual.gsds_info_page,
+    "QUERY": pg.advanced_search,
 }
 
 go_to = functions.get(st.session_state.current_page)

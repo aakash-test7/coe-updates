@@ -91,6 +91,14 @@ def show_tf_info(tid, is_multi=False):
 
 def tf_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_tf", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.rerun()
+    
     header_styled("Transcription Factors", "It provides detailed information about transcription factors binding to the selected gene.")
     
     col1, col2 = st.columns(2)
@@ -111,27 +119,63 @@ def tf_info_page():
 
     if start_button:
         if tid:
-            st.subheader("Transcription Factor Information")
-            show_tf_info(tid, is_multi=False)
+            con=st.container(border=True)
+            with con:
+                st.subheader("Transcription Factor Information")
+                show_tf_info(tid, is_multi=False)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("PlantRegMap - http://plantregmap.gao-lab.org/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545. https://pubmed.ncbi.nlm.nih.gov/31701126/</a>', unsafe_allow_html=True)
+                    st.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657. https://pubmed.ncbi.nlm.nih.gov/27924042/</a>', unsafe_allow_html=True)
+                    st.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157. https://pubmed.ncbi.nlm.nih.gov/25750178/</a>', unsafe_allow_html=True)
 
         elif mtid:
             mtid_list = [tid.strip() for tid in mtid.replace(",", " ").split()]
-            st.subheader("Transcription Factor Information")
-            show_tf_info(mtid_list, is_multi=True)
+            con=st.container(border=True)
+            with con:
+                st.subheader("Transcription Factor Information")
+                show_tf_info(mtid_list, is_multi=True)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("PlantRegMap - http://plantregmap.gao-lab.org/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545. https://pubmed.ncbi.nlm.nih.gov/31701126/</a>', unsafe_allow_html=True)
+                    st.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657. https://pubmed.ncbi.nlm.nih.gov/27924042/</a>', unsafe_allow_html=True)
+                    st.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157. https://pubmed.ncbi.nlm.nih.gov/25750178/</a>', unsafe_allow_html=True)
 
         elif locid:
             tid = process_locid(locid)
             if tid:
-                st.subheader("Transcription Factor Information")
-                show_tf_info(tid, is_multi=False)
+                con=st.container(border=True)
+                with con:
+                    st.subheader("Transcription Factor Information")
+                    show_tf_info(tid, is_multi=False)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("PlantRegMap - http://plantregmap.gao-lab.org/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545. https://pubmed.ncbi.nlm.nih.gov/31701126/</a>', unsafe_allow_html=True)
+                        st.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657. https://pubmed.ncbi.nlm.nih.gov/27924042/</a>', unsafe_allow_html=True)
+                        st.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157. https://pubmed.ncbi.nlm.nih.gov/25750178/</a>', unsafe_allow_html=True)
 
         elif mlocid:
             available, rejected = mlocid_error(mlocid)
             if available:
                 mtid = process_mlocid(",".join(available))
                 mtid_list = [x.strip() for x in mtid.replace(",", " ").split()]
-                st.subheader("Transcription Factor Information")
-                show_tf_info(mtid_list, is_multi=True)
+                con=st.container(border=True)
+                with con:
+                    st.subheader("Transcription Factor Information")
+                    show_tf_info(mtid_list, is_multi=True)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("PlantRegMap - http://plantregmap.gao-lab.org/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('(1) <a href="https://pubmed.ncbi.nlm.nih.gov/31701126/" target="_blank">Tian F, Yang DC, Meng YQ, Jin J, Gao G. PlantRegMap: charting functional regulatory maps in plants. Nucleic Acids Res. 2020 Jan 8;48(D1):D1104-D1113. doi: 10.1093/nar/gkz1020. PMID: 31701126; PMCID: PMC7145545. https://pubmed.ncbi.nlm.nih.gov/31701126/</a>', unsafe_allow_html=True)
+                        st.write('(2) <a href="https://pubmed.ncbi.nlm.nih.gov/27924042/" target="_blank">Jin J, Tian F, Yang DC, Meng YQ, Kong L, Luo J, Gao G. PlantTFDB 4.0: toward a central hub for transcription factors and regulatory interactions in plants. Nucleic Acids Res. 2017 Jan 4;45(D1):D1040-D1045. doi: 10.1093/nar/gkw982. Epub 2016 Oct 24. PMID: 27924042; PMCID: PMC5210657. https://pubmed.ncbi.nlm.nih.gov/27924042/</a>', unsafe_allow_html=True)
+                        st.write('(3) <a href="https://pubmed.ncbi.nlm.nih.gov/25750178/" target="_blank">Jin J, He K, Tang X, Li Z, Lv L, Zhao Y, Luo J, Gao G. An Arabidopsis Transcriptional Regulatory Map Reveals Distinct Functional and Evolutionary Features of Novel Transcription Factors. Mol Biol Evol. 2015 Jul;32(7):1767-73. doi: 10.1093/molbev/msv058. Epub 2015 Mar 6. Erratum in: Mol Biol Evol. 2017 Nov 1;34(11):3039. doi: 10.1093/molbev/msx245. PMID: 25750178; PMCID: PMC4476157. https://pubmed.ncbi.nlm.nih.gov/25750178/</a>', unsafe_allow_html=True)
 
         st.toast("Task completed successfully.")
     else:

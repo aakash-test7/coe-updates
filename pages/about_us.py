@@ -6,13 +6,17 @@ import streamlit as st
 from backend import svm_charts, tsi_plot, header_styled
 from pages.footer import base_footer
 
+
 def citations_page():
     header_styled("Citations","Citations for Supporting Data, Algorithms, and Tools Utilized in the ChickpeaOmicsExplorer")
     con=st.container(border=True)
     con.write("### Expression Data :")
     con.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
     con.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
-    
+    con.write(" ")
+    con.write("https://pubmed.ncbi.nlm.nih.gov/29637575/")
+    con.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
+
     con = st.container(border=True)
     con.write("### Sequences:")
     con.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")

@@ -4,6 +4,17 @@ from pages.footer import base_footer
 
 def rna_type_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    
+    if "first_rna_visit" not in st.session_state:
+        st.session_state["first_rna_visit"] = True
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_rna", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.session_state["first_rna_visit"] = True
+            st.rerun()
+    
     header_styled("RNA type Search", "It gives details about the coding potential of RNA (mRNA or LncRNA)")
     col1, col2 = st.columns(2)
 
@@ -28,8 +39,21 @@ def rna_type_page():
     con_btn1, con_btn2, con_btn3 = st.columns([2, 2, 2])
     with con_btn2:
         start_button = st.button("Search", use_container_width=True, key="rna_Searchbutton1")
+    # Main logic for Streamlit interface
+    if st.session_state.get("programmatic_nav", False) and tid == "" and mtid == "" and locid == "" and mlocid == "" and st.session_state.get("first_rna_visit", True):
+        con= st.container(border=True)
+        st.session_state["first_rna_visit"] = False
+        temp_list = st.session_state.get("site_search_input_transcript")
+        st.session_state["site_search_input_transcript"] = []
+        if temp_list:
+            with con:
+                st.subheader("RNA")
+                show_rna_data(temp_list, is_multi=True) if len(temp_list) > 1 else show_rna_data(temp_list[0])
 
-    if start_button:
+                st.subheader("lncRNA")
+                show_lncrna_data(temp_list, is_multi=True) if len(temp_list) > 1 else show_lncrna_data(temp_list[0])
+        st.toast("Task completed successfully.")
+    elif start_button:
         if tid:
             matching_row = df[df['Transcript id'] == tid]
 

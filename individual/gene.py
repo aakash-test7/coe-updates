@@ -4,7 +4,17 @@ from pages.footer import base_footer
 
 def gene_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    header_styled("Gene Information Search", "It gives detailed insights about each Genomic Sequence, RNA Sequence, CDS Sequence, Promoter Sequences, Peptide Sequence and biochemical properties of each protein.")
+    if "first_gene_visit" not in st.session_state:
+        st.session_state["first_gene_visit"] = True
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_gene", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.session_state["first_gene_visit"] = True
+            st.rerun()
+    
+    header_styled("Gene Information Search", "It gives detailed insights about each Genomic Sequence, RNA Sequence, CDS Sequence, Promoter Sequences, Protein Sequence and biochemical properties of each protein.")
     col1, col2 = st.columns(2)
 
     with col1:
@@ -28,8 +38,29 @@ def gene_info_page():
     con1, con2, con3 = st.columns([2, 2, 2])
     with con2:
         start_button = st.button("Search", use_container_width=True, key="ginfo_Searchbutton1")
+    # Main logic for Streamlit interface
+    if st.session_state.get("programmatic_nav", False) and tid == "" and mtid == "" and locid == "" and mlocid == "" and st.session_state.get("first_gene_visit", True):
+        con= st.container(border=True)
+        st.session_state["first_gene_visit"] = False
+        temp_list = st.session_state.get("site_search_input_transcript")
+        st.session_state["site_search_input_transcript"] = []
+        if temp_list:   
+            with con:
+                st.subheader("Sequence data")
+                show_sequence_data(temp_list, is_multi=True) if len(temp_list) > 1 else show_sequence_data(temp_list[0])
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+                    st.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+                    st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
+    
+                st.subheader("Biochemical Properties")
+                show_biochemical_properties(temp_list, is_multi=True) if len(temp_list) > 1 else show_biochemical_properties(temp_list[0])
+        #st.toast("Task completed successfully.")
 
-    if start_button:
+    elif start_button:
         if tid:
             matching_row = df[df['Transcript id'] == tid]
 
@@ -38,6 +69,13 @@ def gene_info_page():
                 with con:
                     st.subheader("Sequence data")
                     show_sequence_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+                        st.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+                        st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
 
                     st.subheader("Biochemical Properties")
                     show_biochemical_properties(tid)
@@ -59,6 +97,13 @@ def gene_info_page():
                 with con:
                     st.subheader("\nSequences data")
                     show_sequence_data(mtid_list, is_multi=True)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+                        st.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+                        st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
 
                     st.subheader("Biochemical Properties")
                     show_biochemical_properties(mtid_list, is_multi=True)
@@ -77,6 +122,13 @@ def gene_info_page():
                 with con:
                     st.subheader("Sequence data")
                     show_sequence_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+                        st.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+                        st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
 
                     st.subheader("Biochemical Properties")
                     show_biochemical_properties(tid)
@@ -97,6 +149,13 @@ def gene_info_page():
                     with con:
                         st.subheader("\nSequences data")
                         show_sequence_data(mtid_list, is_multi=True)
+                        c1,c2=con.columns(2)
+                        with c1.popover("Data Source", use_container_width=True):
+                            st.write("Phytozome v13 - https://phytozome-next.jgi.doe.gov/")
+                            st.write("PlantCARE, a database of plant cis-acting regulatory elements - http://bioinformatics.psb.ugent.be/webtools/plantcare/html/")
+                        with c2.popover("Research Article", use_container_width=True):
+                            st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/22110026/" target="_blank">David M. Goodstein, Shengqiang Shu, Russell Howson, Rochak Neupane, Richard D. Hayes, Joni Fazo, Therese Mitros, William Dirks, Uffe Hellsten, Nicholas Putnam, and Daniel S. Rokhsar, Phytozome: a comparative platform for green plant genomics, Nucleic Acids Res. 2012 40 (D1): D1178-D1186. https://pubmed.ncbi.nlm.nih.gov/22110026/</a>', unsafe_allow_html=True)
+                            st.write('<a href="https://pubmed.ncbi.nlm.nih.gov/11752327/" target="_blank">Lescot M, Déhais P, Thijs G, Marchal K, Moreau Y, Van de Peer Y, Rouzé P, Rombauts S. PlantCARE, a database of plant cis-acting regulatory elements and a portal to tools for in silico analysis of promoter sequences. Nucleic Acids Res. 2002 Jan 1;30(1):325-7. doi: 10.1093/nar/30.1.325. PMID: 11752327; PMCID: PMC99092. https://pubmed.ncbi.nlm.nih.gov/11752327/</a>', unsafe_allow_html=True)
 
                         st.subheader("Biochemical Properties")
                         show_biochemical_properties(mtid_list, is_multi=True)

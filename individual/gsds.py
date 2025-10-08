@@ -5,6 +5,14 @@ import pandas as pd
 
 def gsds_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_gsds", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.rerun()
+    
     header_styled("Gene Structure", "It provides the intronic-exonic organization of any gene.")
     col1, col2 = st.columns(2)
 

@@ -4,6 +4,17 @@ from pages.footer import base_footer
 
 def mirna_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+
+    if "first_mirna_visit" not in st.session_state:
+        st.session_state["first_mirna_visit"] = True
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_mirna", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.session_state["first_mirna_visit"] = True
+            st.rerun()
+    
     header_styled("miRNA Target", "Users can get the details about the putative miRNAs of the particular gene")
     col1, col2 = st.columns(2)
     with col1:
@@ -24,8 +35,28 @@ def mirna_info_page():
     cc1, cc2, cc3 = st.columns([2, 2, 2])
     with cc2:
         start_button = st.button("Search", use_container_width=True, key="mirna_Searchbutton1")
-
-    if start_button:
+    # Main logic for Streamlit interface
+    if st.session_state.get("programmatic_nav", False) and tid == "" and mtid == "" and locid == "" and mlocid == "" and st.session_state.get("first_mirna_visit", True):
+        con= st.container(border=True)
+        st.session_state["first_mirna_visit"] = False
+        temp_list = st.session_state.get("site_search_input_transcript")
+        st.session_state["site_search_input_transcript"] = []
+        if temp_list:
+            with con:
+                st.subheader("miRNA Target")
+                show_mirna_data(temp_list, is_multi=True) if len(temp_list) > 1 else show_mirna_data(temp_list[0])
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("PmiREN - https://pmiren.com")
+                    st.write("psRNATarget - https://www.zhaolab.org/psRNATarget/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""", unsafe_allow_html=True)
+                    st.write("""<a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""", unsafe_allow_html=True)
+                    st.write("""<a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""", unsafe_allow_html=True)
+                    st.write("""<a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""", unsafe_allow_html=True)    
+            
+        st.toast("Task completed successfully.")
+    elif start_button:
         if tid:
             matching_row = df[df['Transcript id'] == tid]
             if not matching_row.empty:
@@ -33,6 +64,16 @@ def mirna_info_page():
                 with con:
                     st.subheader("miRNA Target")
                     show_mirna_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("PmiREN - https://pmiren.com")
+                        st.write("psRNATarget - https://www.zhaolab.org/psRNATarget/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""", unsafe_allow_html=True)    
+            
             else:
                 st.error(f"No match found for Gene ID: {tid}")
             st.toast("Task completed successfully.")
@@ -47,6 +88,16 @@ def mirna_info_page():
                 with con:
                     st.subheader("miRNA Target")
                     show_mirna_data(mtid_list, is_multi=True)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("PmiREN - https://pmiren.com")
+                        st.write("psRNATarget - https://www.zhaolab.org/psRNATarget/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""", unsafe_allow_html=True)    
+            
             if not_found_ids:
                 st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
             st.toast("Task completed successfully.")
@@ -58,6 +109,16 @@ def mirna_info_page():
                 with con:
                     st.subheader("miRNA Target")
                     show_mirna_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("PmiREN - https://pmiren.com")
+                        st.write("psRNATarget - https://www.zhaolab.org/psRNATarget/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""", unsafe_allow_html=True)
+                        st.write("""<a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""", unsafe_allow_html=True)    
+            
             else:
                 st.error(f"No match found for NCBI ID: {locid}")
             st.toast("Task completed successfully.")
@@ -73,6 +134,16 @@ def mirna_info_page():
                     with con:
                         st.subheader("miRNA Target")
                         show_mirna_data(mtid_list, is_multi=True)
+                        c1,c2=con.columns(2)
+                        with c1.popover("Data Source", use_container_width=True):
+                            st.write("PmiREN - https://pmiren.com")
+                            st.write("psRNATarget - https://www.zhaolab.org/psRNATarget/")
+                        with c2.popover("Research Article", use_container_width=True):
+                            st.write("""<a href="https://doi.org/10.1093/nar/gkz894" target="_blank">Guo Z, Kuang Z, Ying Wang Y, Zhao Y, Tao Y, Cheng C, Yang J, Lu X, Hao C, Wang T, Cao X, Wei J, Li L, Yang X, PmiREN: a comprehensive encyclopedia of plant miRNAs, Nucleic Acids Research, Volume 48, Issue D1, 08 January 2020, Pages D1114–D1121, https://doi.org/10.1093/nar/gkz894</a>""", unsafe_allow_html=True)
+                            st.write("""<a href="https://doi.org/10.1093/nar/gky316" target="_blank">Dai X, Zhuang Z, Zhao PX. psRNATarget: a plant small RNA target analysis server (2017 release). Nucleic Acids Res. 2018 Jul 2;46(W1):W49-W54. doi: 10.1093/nar/gky316. PMID: 29718424; PMCID: PMC6030838.</a>""", unsafe_allow_html=True)
+                            st.write("""<a href="https://doi.org/10.1093/nar/gkr319" target="_blank">Dai X, Zhao PX. psRNATarget: a plant small RNA target analysis server. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W155-9. doi: 10.1093/nar/gkr319. Epub 2011 May 27. PMID: 21622958; PMCID: PMC3125753.</a>""", unsafe_allow_html=True)
+                            st.write("""<a href="https://doi.org/10.1093/bib/bbq065" target="_blank">Dai X, Zhuang Z, Zhao PX. Computational analysis of miRNA targets in plants: current status and challenges. Brief Bioinform. 2011 Mar;12(2):115-21. doi: 10.1093/bib/bbq065. Epub 2010 Sep 21. PMID: 20858738.</a>""", unsafe_allow_html=True)    
+            
                 st.toast("Task completed successfully.")
             if rejected:
                 st.error(f"No matches found for NCBI IDs: {', '.join(rejected)}")

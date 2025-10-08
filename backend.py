@@ -55,6 +55,7 @@ def read_excel_from_gcs(bucket_name, blob_name, header=0):
     except Exception as e:
         print(f"Error reading Excel file {blob_name} from GCS: {e}")
         return None
+
 # ===================== Floating Section Navbar Helpers =====================
 # Theme (mirrors Streamlit config like variables)
 NAVBAR_THEME = {
@@ -66,13 +67,10 @@ NAVBAR_THEME = {
 }
 
 def _inject_navbar_styles():
-    """Inject CSS & JS only once to support a floating right-side navbar.
+    """Inject CSS & JS to support a floating right-side navbar.
     The navbar container itself is created separately via render_section_navbar.
     """
-    if st.session_state.get("_navbar_assets_loaded"):
-        return
-    st.session_state["_navbar_assets_loaded"] = True
-
+    # Always inject styles to ensure they persist across reruns
     css = f"""
     <style>
     /* Root palette for easy overrides */
@@ -288,6 +286,7 @@ def section_anchor(section_id):
 
 def _slugify(label: str) -> str:
     return ''.join(c.lower() if c.isalnum() else '-' for c in label).strip('-').replace('--','-')
+
 df = read_excel_from_gcs(bucket_name, "Data/FPKM_Matrix(Ca).xlsx")
 miRNA_df = read_excel_from_gcs(bucket_name, "Data/8.xlsx")
 protein_df = read_excel_from_gcs(bucket_name, "Data/9.xlsx")
@@ -463,7 +462,7 @@ def show_sequence_data(tid, is_multi=False):
                 st.code(transcript_code, language="text")
             with st.expander("CDS Sequence"):
                 st.code(cds_code, language="text")
-            with st.expander("Peptide Sequence"):
+            with st.expander("Protein Sequence"):
                 st.code(peptide_code, language="text")
             with st.expander("Promoter Sequence (Genomic Sequences 2kb upstream to the transcription start site)"):
                 st.code(promote_code, language="text")
@@ -472,7 +471,7 @@ def show_sequence_data(tid, is_multi=False):
                 f">{tid}|{loc_id} Genomic Sequence\n{gene_code}\n\n"
                 f">{tid}|{loc_id} Transcript Sequence\n{transcript_code}\n\n"
                 f">{tid}|{loc_id} CDS Sequence\n{cds_code}\n\n"
-                f">{tid}|{loc_id} Peptide Sequence\n{peptide_code}\n\n"
+                f">{tid}|{loc_id} Protein Sequence\n{peptide_code}\n\n"
                 f">{tid}|{loc_id} Promoter Sequence\n{promote_code}\n")
             col1,col2,col3=st.columns([1,2,1])
             with col2:
@@ -518,7 +517,7 @@ def show_sequence_data(tid, is_multi=False):
                     st.code(transcript_code, language="text")
                 with st.expander(f"{t_id} | {loc_id} CDS Sequence"):
                     st.code(cds_code, language="text")
-                with st.expander(f"{t_id} | {loc_id} Peptide Sequence"):
+                with st.expander(f"{t_id} | {loc_id} Protein Sequence"):
                     st.code(peptide_code, language="text")
                 with st.expander(f"{t_id} | {loc_id} Promoter Sequence (Genomic Sequences 2kb upstream to the transcription start site)"):
                     st.code(promote_code, language="text")
@@ -527,7 +526,7 @@ def show_sequence_data(tid, is_multi=False):
                     f">{t_id}|{loc_id} Genomic Sequence\n{gene_code}\n\n"
                     f">{t_id}|{loc_id} Transcript Sequence\n{transcript_code}\n\n"
                     f">{t_id}|{loc_id} CDS Sequence\n{cds_code}\n\n"
-                    f">{t_id}|{loc_id} Peptide Sequence\n{peptide_code}\n\n"
+                    f">{t_id}|{loc_id} Protein Sequence\n{peptide_code}\n\n"
                     f">{t_id}|{loc_id} Promoter Sequence\n{promote_code}\n")
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
@@ -552,7 +551,7 @@ def show_sequence_data(tid, is_multi=False):
 
             col2.download_button(label="Download Combined CDS Sequences in FASTA Format (.txt)",data=cds_sequences,file_name="combined_cds_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
 
-            col2.download_button(label="Download Combined Peptide Sequences in FASTA Format (.txt)",data=peptide_sequences,file_name="combined_peptide_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
+            col2.download_button(label="Download Combined Protein Sequences in FASTA Format (.txt)",data=peptide_sequences,file_name="combined_peptide_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
 
             col2.download_button(label="Download Combined Promoter Sequences in FASTA Format (.txt)",data=promoter_sequences,file_name="combined_promoter_sequences.txt",mime="text/plain",on_click="ignore",use_container_width=True)
 
@@ -760,6 +759,352 @@ def show_df28_matrix(id_list, is_multi=False, by_tid=True):
         st.dataframe(sorted_result)
         return True
 
+TISSUE_MAPPINGS = {
+    'Ger_Coleoptile': ['GS'],
+    'Ger_Embryo': ['Emb'],
+    'Ger_Radical': ['GS'],
+    'Rep_Buds': ['FB1', 'FB2', 'FB3', 'FB4'],
+    'Rep_Flower': ['FL1', 'FL2', 'FL3', 'FL4', 'FL5'],
+    'Rep_Immatureseeds': ['5DAP', '10DAP'],
+    'Rep_Leaf': ['YL', 'ML'],
+    'Rep_Nodules': ['Nod'],
+    'Rep_Petiole': [],
+    'Rep_Pods': ['PodSh'],
+    'Rep_Root': ['R', 'Rtip', 'RH'],
+    'Rep_Stem': ['S'],
+    'Seed_Epicotyl': ['S'],
+    'Seed_PrimaryRoot': ['R'],
+    'Sen_Immatureseed': ['10DAP', '20DAP'],
+    'Sen_Matureseed': ['20DAP', '30DAP'],
+    'Sen_SeedCoat': ['SdCt'],
+    'Sen_Leaf-Y': ['YL', 'ML'],
+    'Sen_Leaf': ['YL', 'ML'],
+    'Sen_Nodules': ['Nod'],
+    'Sen_Petiole': [],
+    'Sen_Root': ['R'],
+    'Sen_Stem': ['S'],
+    'Veg_Leaf': ['YL', 'ML'],
+    'Veg_Petiole': [],
+    'Veg_Root': ['R'],
+    'Veg_Stem': ['S']
+}
+
+def create_comparison_chart(tid, is_multi=False):
+    """Create comparison chart using Streamlit native charts"""
+    
+    if is_multi:
+        # For multiple IDs, show expanders for each transcript
+        st.subheader("Individual Transcript Comparisons")
+        
+        for i, transcript_id in enumerate(tid):
+            # Create expander for each transcript
+            with st.expander(f"Transcript: {transcript_id}", expanded=(i == 0)):  # First one expanded by default
+                st.info(f"Showing comparison for: **{transcript_id}**")
+                
+                # Get data for this specific transcript
+                data_32 = df[df['Transcript id'] == transcript_id]
+                data_28 = df_28[df_28['Chickpea_Id'] == transcript_id]
+                
+                if data_32.empty or data_28.empty:
+                    st.warning(f"No data found for transcript ID: {transcript_id}")
+                    continue
+                
+                # Prepare data for comparison for this transcript
+                comparison_data = []
+                
+                for tissue_28, tissues_32 in TISSUE_MAPPINGS.items():
+                    if tissues_32 and tissue_28 in data_28.columns and tissue_28 != 'Chickpea_Id' and tissue_28 != 'LOC ID':
+                        # Get 28-tissue value
+                        val_28 = data_28[tissue_28].iloc[0] if not pd.isna(data_28[tissue_28].iloc[0]) else 0
+                        
+                        # Get average of related 32-tissues
+                        val_32 = 0
+                        count = 0
+                        for tissue_32 in tissues_32:
+                            if tissue_32 in data_32.columns:
+                                tissue_val = data_32[tissue_32].iloc[0]
+                                if not pd.isna(tissue_val):
+                                    val_32 += tissue_val
+                                    count += 1
+                        val_32 = val_32 / count if count > 0 else 0
+                        
+                        if val_28 > 0 or val_32 > 0:  # Only include if there's data
+                            comparison_data.append({
+                                'Tissue': tissue_28,
+                                '28_Tissues_FPKM': val_28,
+                                '32_Tissues_FPKM': val_32
+                            })
+                
+                if not comparison_data:
+                    st.warning("No comparable tissue data found for this transcript.")
+                    continue
+                
+                comparison_df = pd.DataFrame(comparison_data)
+                
+                # Display as bar chart
+                st.subheader("FPKM Comparison - Bar Chart")
+                st.bar_chart(comparison_df.set_index('Tissue')[['28_Tissues_FPKM', '32_Tissues_FPKM']], 
+                             color=['#1f77b4', '#ff7f0e'], stack=False)
+                
+                # Display as line chart for trend comparison
+                st.subheader("FPKM Comparison - Line Chart")
+                st.line_chart(comparison_df.set_index('Tissue')[['28_Tissues_FPKM', '32_Tissues_FPKM']],
+                              color=['#1f77b4', '#ff7f0e'])
+                
+                # Display data table
+                st.subheader("Comparison Data")
+                st.dataframe(comparison_df)
+        
+    else:
+        # For single ID, use it directly
+        data_32 = df[df['Transcript id'] == tid]
+        data_28 = df_28[df_28['Chickpea_Id'] == tid]
+        
+        if data_32.empty or data_28.empty:
+            st.warning(f"No data found for transcript ID: {tid}")
+            return
+        
+        # Prepare data for comparison
+        comparison_data = []
+        
+        for tissue_28, tissues_32 in TISSUE_MAPPINGS.items():
+            if tissues_32 and tissue_28 in data_28.columns and tissue_28 != 'Chickpea_Id' and tissue_28 != 'LOC ID':
+                # Get 28-tissue value
+                val_28 = data_28[tissue_28].iloc[0] if not pd.isna(data_28[tissue_28].iloc[0]) else 0
+                
+                # Get average of related 32-tissues
+                val_32 = 0
+                count = 0
+                for tissue_32 in tissues_32:
+                    if tissue_32 in data_32.columns:
+                        tissue_val = data_32[tissue_32].iloc[0]
+                        if not pd.isna(tissue_val):
+                            val_32 += tissue_val
+                            count += 1
+                val_32 = val_32 / count if count > 0 else 0
+                
+                if val_28 > 0 or val_32 > 0:  # Only include if there's data
+                    comparison_data.append({
+                        'Tissue': tissue_28,
+                        '28_Tissues_FPKM': val_28,
+                        '32_Tissues_FPKM': val_32
+                    })
+        
+        if not comparison_data:
+            st.warning("No comparable tissue data found for this transcript.")
+            return
+        
+        comparison_df = pd.DataFrame(comparison_data)
+        
+        # Display as bar chart
+        st.subheader("FPKM Comparison - Bar Chart")
+        st.bar_chart(comparison_df.set_index('Tissue')[['28_Tissues_FPKM', '32_Tissues_FPKM']], 
+                     color=['#1f77b4', '#ff7f0e'], stack=False)
+        
+        # Display as line chart for trend comparison
+        st.subheader("FPKM Comparison - Line Chart")
+        st.line_chart(comparison_df.set_index('Tissue')[['28_Tissues_FPKM', '32_Tissues_FPKM']],
+                      color=['#1f77b4', '#ff7f0e'])
+        
+        # Display data table
+        st.subheader("Comparison Data")
+        st.dataframe(comparison_df)
+
+def show_fpkm_log2(tid, is_multi=False, display=True):
+    """Display FPKM matrix atlas data for transcript ID(s), with log2(cell value + 1) transformation."""
+    temp_df = df.copy()
+    
+    expression_columns = ['GS', 'S', 'R', 'Rtip', 'RH', 'YL', 'ML', 'Brac', 'SAM', 'FB1', 'FB2', 'FB3', 'FB4', 'FL1', 'FL2', 'FL3', 'FL4', 'FL5', 'Cal', 'Cor', 'And', 'Gyn', 'Pedi', 'PodSh', 'SdCt', 'Emb', 'Endo', '5DAP', '10DAP', '20DAP', '30DAP', 'Nod']
+    
+    if not is_multi:
+        result = temp_df[temp_df['Transcript id'] == tid]
+        columns_to_drop = ['Genomic Coordinates', 'mRNA', 'lncRNA', 'Genomic Sequence', 'Transcript Sequence', 
+                          'Peptide Sequence', 'Cds Sequence', 'Promoter Sequence']
+        columns_to_drop = [col for col in columns_to_drop if col in result.columns]
+        result = result.drop(columns=columns_to_drop)
+
+        result.loc[:, expression_columns] = result[expression_columns].apply(lambda x: np.log2(x + 1)) #change for log2 transformation (lambda x: [math.log2(val) if val > 0 else math.log2(1e-4) for val in x])
+
+        if display:
+            st.dataframe(result)
+        return result
+    else:
+        result = pd.DataFrame()
+        for t_id in tid:
+            temp_result = temp_df[temp_df['Transcript id'] == t_id]
+            columns_to_drop = ['Genomic Coordinates', 'mRNA', 'lncRNA', 'Genomic Sequence', 'Transcript Sequence', 
+                              'Peptide Sequence', 'Cds Sequence', 'Promoter Sequence']
+            columns_to_drop = [col for col in columns_to_drop if col in temp_result.columns]
+            temp_result = temp_result.drop(columns=columns_to_drop)
+
+            temp_result.loc[:, expression_columns] = temp_result[expression_columns].apply(lambda x: np.log2(x + 1)) #change for log2 transformation (lambda x: [math.log2(val) if val > 0 else math.log2(1e-4) for val in x])
+            
+            result = pd.concat([result, temp_result], ignore_index=True)
+
+        sorted_result = result.sort_values(by="Transcript id")
+        if display:
+            st.dataframe(sorted_result)
+        return sorted_result
+
+def show_df28_log2(id_list, is_multi=False, by_tid=True, display=True):
+    temp_df = df_28.copy()
+    if by_tid:
+        id_column = 'Chickpea_Id'
+    else:
+        id_column = 'LOC ID'
+    
+    expression_columns_28 = ['Ger_Coleoptile', 'Ger_Embryo', 'Ger_Radical', 'Rep_Buds', 'Rep_Flower', 
+                             'Rep_Immatureseeds', 'Rep_Leaf', 'Rep_Nodules', 'Rep_Petiole', 'Rep_Pods', 
+                             'Rep_Root', 'Rep_Stem', 'Seed_Epicotyl', 'Seed_PrimaryRoot', 'Sen_Immatureseed', 
+                             'Sen_Leaf-Y', 'Sen_Leaf', 'Sen_Matureseed', 'Sen_Nodules', 'Sen_Petiole', 
+                             'Sen_Root', 'Sen_SeedCoat', 'Sen_Stem', 'Veg_Leaf', 'Veg_Petiole', 'Veg_Root', 
+                             'Veg_Stem']
+
+    if not is_multi:
+        result = temp_df[temp_df[id_column] == id_list]
+        columns_to_drop = ['Tracking_id', 'Genomic coordinates', 'Sequence description']
+        columns_to_drop = [col for col in columns_to_drop if col in result.columns]
+        result = result.drop(columns=columns_to_drop)
+        
+        result.loc[:, expression_columns_28] = result[expression_columns_28].apply(lambda x: np.log2(x + 1)) #change for log2 transformation (lambda x: [math.log2(val) if val > 0 else math.log2(1e-4) for val in x])
+
+        if display:
+            st.dataframe(result)
+        return result
+    else:
+        result = pd.DataFrame()
+        for id_val in id_list:
+            temp_result = temp_df[temp_df[id_column] == id_val]
+            
+            temp_result.loc[:, expression_columns_28] = temp_result[expression_columns_28].apply(lambda x: np.log2(x + 1)) #change for log2 transformation (lambda x: [math.log2(val) if val > 0 else math.log2(1e-4) for val in x])
+            
+            result = pd.concat([result, temp_result], ignore_index=True)
+        
+        sorted_result = result.sort_values(by='Chickpea_Id')
+        if display:
+            st.dataframe(sorted_result)
+        return sorted_result
+    
+def create_comparison_chart_log2(tid, is_multi=False):
+    """Create comparison chart using log2 transformed values"""
+    
+    if is_multi:
+        # For multiple IDs, show expanders for each transcript
+        st.subheader("Individual Transcript Comparisons (Log2)")
+        
+        for i, transcript_id in enumerate(tid):
+            # Create expander for each transcript
+            with st.expander(f"Transcript: {transcript_id}", expanded=(i == 0)):  # First one expanded by default
+                st.info(f"Showing comparison for: **{transcript_id}**")
+                
+                # Get log2 transformed data for this specific transcript
+                data_32_log2 = show_fpkm_log2(transcript_id, is_multi=False, display=False)
+                data_28_log2 = show_df28_log2(transcript_id, is_multi=False, by_tid=True, display=False)
+
+                if data_32_log2.empty or data_28_log2.empty:
+                    st.warning(f"No data found for transcript ID: {transcript_id}")
+                    continue
+                
+                # Prepare data for comparison for this transcript
+                comparison_data = []
+                
+                for tissue_28, tissues_32 in TISSUE_MAPPINGS.items():
+                    if tissues_32 and tissue_28 in data_28_log2.columns:
+                        # Get 28-tissue log2 value
+                        val_28 = data_28_log2[tissue_28].iloc[0] if not pd.isna(data_28_log2[tissue_28].iloc[0]) else 0
+                        
+                        # Get average of related 32-tissues log2 values
+                        val_32 = 0
+                        count = 0
+                        for tissue_32 in tissues_32:
+                            if tissue_32 in data_32_log2.columns:
+                                tissue_val = data_32_log2[tissue_32].iloc[0]
+                                if not pd.isna(tissue_val):
+                                    val_32 += tissue_val
+                                    count += 1
+                        val_32 = val_32 / count if count > 0 else 0
+                        
+                        if val_28 > 0 or val_32 > 0:  # Only include if there's data
+                            comparison_data.append({
+                                'Tissue': tissue_28,
+                                '28_Tissues_log2(FPKM+1)': val_28,
+                                '32_Tissues_log2(FPKM+1)': val_32
+                            })
+                
+                if not comparison_data:
+                    st.warning("No comparable tissue data found for this transcript.")
+                    continue
+                
+                comparison_df = pd.DataFrame(comparison_data)
+                
+                # Display as bar chart
+                st.subheader("Log2(FPKM+1) Comparison - Bar Chart")
+                st.bar_chart(comparison_df.set_index('Tissue')[['28_Tissues_log2(FPKM+1)', '32_Tissues_log2(FPKM+1)']],
+                             color=['#1f77b4', "#ff0e0e"], stack=False)
+                
+                # Display as line chart for trend comparison
+                st.subheader("Log2(FPKM+1) Comparison - Line Chart")
+                st.line_chart(comparison_df.set_index('Tissue')[['28_Tissues_log2(FPKM+1)', '32_Tissues_log2(FPKM+1)']],
+                              color=['#1f77b4', '#ff0e0e'])
+
+                # Display data table
+                st.subheader("Log2(FPKM+1) Comparison Data")
+                st.dataframe(comparison_df)
+        
+    else:
+        # For single ID, use it directly
+        data_32_log2 = show_fpkm_log2(tid, is_multi=False, display=False)
+        data_28_log2 = show_df28_log2(tid, is_multi=False, by_tid=True, display=False)
+
+        if data_32_log2.empty or data_28_log2.empty:
+            st.warning(f"No data found for transcript ID: {tid}")
+            return
+        
+        comparison_data = []
+        
+        for tissue_28, tissues_32 in TISSUE_MAPPINGS.items():
+            if tissues_32 and tissue_28 in data_28_log2.columns:
+                # Get 28-tissue log2 value
+                val_28 = data_28_log2[tissue_28].iloc[0] if not pd.isna(data_28_log2[tissue_28].iloc[0]) else 0
+                
+                # Get average of related 32-tissues log2 values
+                val_32 = 0
+                count = 0
+                for tissue_32 in tissues_32:
+                    if tissue_32 in data_32_log2.columns:
+                        tissue_val = data_32_log2[tissue_32].iloc[0]
+                        if not pd.isna(tissue_val):
+                            val_32 += tissue_val
+                            count += 1
+                val_32 = val_32 / count if count > 0 else 0
+                
+                if val_28 > 0 or val_32 > 0:  # Only include if there's data
+                    comparison_data.append({
+                        'Tissue': tissue_28,
+                        '28_Tissues_log2(FPKM+1)': val_28,
+                        '32_Tissues_log2(FPKM+1)': val_32
+                    })
+        
+        if not comparison_data:
+            st.warning("No comparable tissue data found for this transcript.")
+            return
+        
+        comparison_df = pd.DataFrame(comparison_data)
+        
+        # Display as bar chart
+        st.subheader("Log2(FPKM+1) Comparison - Bar Chart")
+        st.bar_chart(comparison_df.set_index('Tissue')[['28_Tissues_log2(FPKM+1)', '32_Tissues_log2(FPKM+1)']],
+                     color=['#1f77b4', "#ff0e0e"], stack=False)
+        
+        # Display as line chart for trend comparison
+        st.subheader("Log2(FPKM+1) Comparison - Line Chart")
+        st.line_chart(comparison_df.set_index('Tissue')[['28_Tissues_log2(FPKM+1)', '32_Tissues_log2(FPKM+1)']],
+                      color=['#1f77b4', '#ff0e0e'])
+
+        # Display data table
+        st.subheader("Log2(FPKM+1) Comparison Data")
+        st.dataframe(comparison_df)
+
 def show_pfam_matrix(id_list, is_multi=False, by_tid=True):
     temp_df = pfam_df.copy()
     if by_tid:
@@ -966,11 +1311,12 @@ def show_inparalogs_data(tid, is_multi=False):
 
         return True
     return
-def process_tid(tid, df):
+def process_tid(tid, df, show_output=True):
     result = df[df['Transcript id'] == tid]
     if not result.empty:
         loc_id = result.iloc[0]['LOC ID']
-        st.write(f"LOC ID for Transcript id {tid} is {loc_id}")
+        if show_output:
+            st.write(f"LOC ID for Transcript id {tid} is {loc_id}")
         return loc_id
     else:
         return None
@@ -1113,24 +1459,47 @@ def transcriptid_info(tid):
                 with c2.popover("Research Article", use_container_width=True):
                     st.write('<a href="https://www.nature.com/articles/s41598-018-28948-z" target="_blank">Klopfenstein, D.V., Zhang, L., Pedersen, B.S. et al. GOATOOLS: A Python library for Gene Ontology analyses. Sci Rep 8, 10872 (2018). https://doi.org/10.1038/s41598-018-28948-z</a>', unsafe_allow_html=True)
     
-            con=st.container(border=True)
-            with con:
-                section_anchor(sections[5][0])
-                st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
-                show_fpkm_matrix(tid)
-                c1,c2=con.columns(2)
-                with c1.popover("Data Source", use_container_width=True):
-                    st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
-                with c2.popover("Research Article", use_container_width=True):
-                    st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
-    
-                show_df28_matrix(tid, by_tid=True)
-                c1,c2=con.columns(2)
-                with c1.popover("Data Source", use_container_width=True):
-                    st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
-                with c2.popover("Research Article", use_container_width=True):
-                    st.write("""<a href="https://www.nature.com/articles/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
-                fpkm_glossary()
+            tab1,tab2=st.tabs(["FPKM Values", "log2(FPKM+1) Transformed"])
+            with tab1:
+                con=st.container(border=True)
+                with con:
+                    section_anchor(sections[5][0])
+                    st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
+                    show_fpkm_matrix(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
+        
+                    show_df28_matrix(tid, by_tid=True)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("https://pubmed.ncbi.nlm.nih.gov/29637575/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
+                    create_comparison_chart(tid)
+                    fpkm_glossary()
+            with tab2:
+                con=st.container(border=True)
+                with con:
+                    section_anchor(sections[5][0])
+                    st.subheader("Log2(FPKM+1) Transformed - Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
+                    show_fpkm_log2(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
+        
+                    show_df28_log2(tid, by_tid=True)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("https://pubmed.ncbi.nlm.nih.gov/29637575/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
+                    create_comparison_chart_log2(tid)
+                    fpkm_glossary()
 
             con=st.container(border=True)
             with con:
@@ -1288,24 +1657,46 @@ def multi_transcriptid_info(mtid):
                 st.write("GOATOOLS: A Python library for Gene Ontology analyses - https://pypi.org/project/goatools/")
             with c2.popover("Research Article", use_container_width=True):
                 st.write('<a href="https://www.nature.com/articles/s41598-018-28948-z" target="_blank">Klopfenstein, D.V., Zhang, L., Pedersen, B.S. et al. GOATOOLS: A Python library for Gene Ontology analyses. Sci Rep 8, 10872 (2018). https://doi.org/10.1038/s41598-018-28948-z</a>', unsafe_allow_html=True)
-
-        con=st.container(border=True)
-        with con:
-            section_anchor(sections[5][0])
-            st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
-            show_fpkm_matrix(found_ids, is_multi=True)
-            c1,c2=con.columns(2)
-            with c1.popover("Data Source", use_container_width=True):
-                st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
-            with c2.popover("Research Article", use_container_width=True):
-                st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
-            show_df28_matrix(found_ids, is_multi=True, by_tid=True)
-            c1,c2=con.columns(2)
-            with c1.popover("Data Source", use_container_width=True):
-                st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
-            with c2.popover("Research Article", use_container_width=True):
-                st.write("""<a href="https://www.nature.com/articles/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
-            fpkm_glossary()
+        
+        tab1,tab2=st.tabs(["FPKM Values","Log2(FPKM+1) Transformed"])
+        with tab1:
+            con=st.container(border=True)
+            with con:
+                section_anchor(sections[5][0])
+                st.subheader("Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
+                show_fpkm_matrix(found_ids, is_multi=True)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
+                show_df28_matrix(found_ids, is_multi=True, by_tid=True)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("https://pubmed.ncbi.nlm.nih.gov/29637575/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
+                create_comparison_chart(found_ids, is_multi=True)
+                fpkm_glossary()
+        with tab2:
+            con=st.container(border=True)
+            with con:
+                section_anchor(sections[5][0])
+                st.subheader("Log2(FPKM+1) Transformed - Fragments per kilobase of Exon per million mapped fragments Matrix Atlas")
+                show_fpkm_log2(found_ids, is_multi=True)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("Chickpea Gene Expression Atlas Database (CaGEADB) - http://ccbb.jnu.ac.in/CaGEA/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://www.nature.com/articles/s42003-022-04083-4" target="_blank">Jain, M., Bansal, J., Rajkumar, M.S. et al. An integrated transcriptome mapping the regulatory network of coding and long non-coding RNAs provides a genomics resource in chickpea. Commun Biol 5, 1106 (2022). https://doi.org/10.1038/s42003-022-04083-4</a>""", unsafe_allow_html=True)
+                show_df28_log2(found_ids, is_multi=True, by_tid=True)
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("https://pubmed.ncbi.nlm.nih.gov/29637575/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
+                create_comparison_chart_log2(found_ids, is_multi=True)
+                fpkm_glossary()
 
         con=st.container(border=True)
         with con:
@@ -1371,6 +1762,7 @@ def multi_transcriptid_info(mtid):
             section_anchor(sections[13][0])
             st.subheader("\nParalogs")
             show_inparalogs_data(found_ids, is_multi=True)
+            c1,c2=con.columns(2)
             with c1.popover("Data Source", use_container_width=True):
                 st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
             with c2.popover("Research Article", use_container_width=True):
@@ -1447,11 +1839,12 @@ def multi_user_input_menu(mtid):
                 perf_chart(unique_resultant_values)
         return
 
-def process_locid(locid):
+def process_locid(locid, show_output=True):
     result = protein_df[protein_df['preferredName'] == locid]
     if not result.empty:
         result = result.iloc[0]['Transcript id']
-        st.write(f"Gene ID for {locid} is {result}")
+        if show_output:
+            st.write(f"Gene ID for {locid} is {result}")
         return result
     else:
         return None
@@ -1716,12 +2109,12 @@ def show_sequence_data_g_p(tid, is_multi=False):
             # Display as code block with copy functionality
             with st.expander("Genomic Sequence"):
                 st.code(gene_code, language="text")
-            with st.expander("Peptide Sequence"):
+            with st.expander("Protein Sequence"):
                 st.code(peptide_code, language="text")
 
             combined_file_content = (
                 f">{tid}|{tid} Genomic Sequence\n{gene_code}\n\n"
-                f">{tid}|{tid} Peptide Sequence\n{peptide_code}\n\n")
+                f">{tid}|{tid} Protein Sequence\n{peptide_code}\n\n")
             col1,col2,col3=st.columns([1,2,1])
             with col2:
                 st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{tid}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
@@ -1736,12 +2129,12 @@ def show_sequence_data_g_p(tid, is_multi=False):
 
                 with st.expander(f"{t_id} Genomic Sequence"):
                     st.code(gene_code, language="text")
-                with st.expander(f"{t_id} Peptide Sequence"):
+                with st.expander(f"{t_id} Protein Sequence"):
                     st.code(peptide_code, language="text")
 
                 combined_file_content = (
                     f">{t_id}|{t_id} Genomic Sequence\n{gene_code}\n\n"
-                    f">{t_id}|{t_id} Peptide Sequence\n{peptide_code}\n\n")
+                    f">{t_id}|{t_id} Protein Sequence\n{peptide_code}\n\n")
                 col1,col2,col3=st.columns([1,2,1])
                 with col2:
                     st.download_button(label="Download Sequence in FASTA Format (.txt)", data=combined_file_content, file_name=f"{t_id}_sequence.txt", mime="text/plain", on_click="ignore",use_container_width=True)
@@ -1934,3 +2327,65 @@ def run_gsds(cds_code, genomic_code):
         driver.quit()
 
     return result_url
+
+
+def run_blast_and_get_primer(sequence_input):
+    driver=web_driver()
+    job_id = None
+
+    try:
+        driver.get("https://www.ncbi.nlm.nih.gov/tools/primer-blast/")
+
+        textarea = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "seq"))
+        )
+        textarea.clear()
+        textarea.send_keys(sequence_input)
+
+        get_primers_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "input.blastbutton.prbutton"))
+        )
+        get_primers_btn.click()
+
+        primer_url = None
+        end_time = time.time() + 50
+        while time.time() < end_time:
+            time.sleep(2)
+            page = driver.page_source
+            # quick string check for the primertool page
+            if "primertool.cgi" in page:
+                soup = BeautifulSoup(page, "html.parser")
+                # find anchor tags linking to primertool.cgi
+                a = soup.find("a", href=lambda h: h and "primertool.cgi" in h)
+                if a and a.get("href"):
+                    href = a.get("href")
+                    # Some links may be relative; make absolute if needed
+                    if href.startswith("http"):
+                        primer_url = href
+                    else:
+                        primer_url = requests.compat.urljoin(driver.current_url, href)
+                    break
+                # fallback: some pages show JOB ID in plain text, e.g. 'JOB ID:xc8Y6ErZR3FgS9dO2i7zfKA14k6NJvlTjA'
+                # attempt to extract that using regex from the page text
+                import re
+                m = re.search(r"JOB\s*ID\s*[:\-]?\s*([A-Za-z0-9_\-]+)", page)
+                if m:
+                    job_id = m.group(1)
+                    primer_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={job_id}"
+                    break
+
+    except Exception as e:
+        #logging.exception("Error during BLAST submission")
+        try:
+            st.error(f"Error during BLAST submission: {e}")
+        except Exception:
+            pass
+    finally:
+        driver.quit()
+
+    # Prefer returning the primer tool URL (contains job_key); fall back to RID if needed
+    #if primer_url:
+    #    return primer_url
+    #if job_id:
+    #    return f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={job_id}"
+    return job_id

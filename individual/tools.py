@@ -3,13 +3,20 @@ from individual.crispr import crispr_info_page
 from individual.primer import primer_info_page
 
 def tools_page():
+    # Show "Back to Home" button if navigation was programmatic
+    st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_tools", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.rerun()
+    
     if 'active_tab_tools' not in st.session_state:
         st.session_state.active_tab_tools = 'PrimerDesign'
     
     def set_active_tab(tab_name):
         st.session_state.active_tab_tools = tab_name
 
-    st.write(" ")
     
     col1,col2=st.columns(2)
     if col1.button("Primer Design", key="btn_pd",use_container_width=True):

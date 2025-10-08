@@ -5,7 +5,16 @@ import pandas as pd
 
 def blast_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_blast", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.rerun()
+    
     header_styled("BLAST", "It blasts.")
+    #con=st.container(border=True)
     col1, col2 = st.columns(2)
 
     with col1:
@@ -25,6 +34,8 @@ def blast_info_page():
             mlocid_list = [item.strip() for item in mlocid.replace(",", " ").split()]
             mlocid_list = list(set(mlocid_list))
             mlocid = ",".join(mlocid_list)
+    con=st.container(border=True)
+    seq_input=con.text_input("Enter the Sequence: ", placeholder="e.g., ATGC...", key="blast_Seq_input1").strip()
 
     con1, con2, con3 = st.columns([2, 2, 2])
     with con2:
@@ -152,6 +163,21 @@ def blast_info_page():
             if failed_blast:
                 st.warning(f"BLAST failed or no RID returned for NCBI ID(s): {', '.join(failed_blast)}")
 
+        # CASE 5: Direct Sequence Input
+        if seq_input:
+            temp_id = seq_input
+            con=st.container(border=True)
+            with con:
+                st.subheader("BLAST Results")
+                with st.spinner("Running BLAST...", show_time=True):
+                    rid = run_blast_and_get_rid(temp_id)
+                    if rid:
+                        st.success(f"RID obtained: `{rid}`")
+                        result_url = f"https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Get&RID={rid}"
+
+                        st.components.v1.iframe(src=result_url, height=1000, scrolling=True)
+                    else:
+                        st.error("Failed to obtain RID. Please try again.")
 
     base_footer()
     return

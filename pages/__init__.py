@@ -6,4 +6,4 @@ from pages.about_us import meta_data_page
 from pages.mainapp import search_page
 from pages.about_us import citations_page
 from pages.security import login_page
-
+from pages.advanced_search import advanced_search

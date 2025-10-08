@@ -4,6 +4,16 @@ from pages.footer import base_footer
 
 def orthologs_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    if "first_orthologs_visit" not in st.session_state:
+        st.session_state["first_orthologs_visit"] = True
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_orth", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.session_state["first_orthologs_visit"] = True
+            st.rerun()
+    
     header_styled("Orthologs/Paralogs", "Users can get the details about the conserveness in gene sequences among/within genome of various crop plants")
     col1, col2 = st.columns(2)
     with col1:
@@ -25,7 +35,29 @@ def orthologs_info_page():
     with cc2:
         start_button = st.button("Search", use_container_width=True, key="orth_Searchbutton1")
 
-    if start_button:
+    # Main logic for Streamlit interface
+    if st.session_state.get("programmatic_nav", False) and tid == "" and mtid == "" and locid == "" and mlocid == "" and st.session_state.get("first_orthologs_visit", True):
+        con= st.container(border=True)
+        st.session_state["first_orthologs_visit"] = False
+        temp_list = st.session_state.get("site_search_input_transcript")
+        st.session_state["site_search_input_transcript"] = []
+        if temp_list:
+            with con:
+                st.subheader("Ortholog")
+                show_orthologs_data(temp_list, is_multi=True) if len(temp_list) > 1 else show_orthologs_data(temp_list[0])
+        con= st.container(border=True)
+        if temp_list:
+            with con:
+                st.subheader("Paralog")
+                show_inparalogs_data(temp_list, is_multi=True) if len(temp_list) > 1 else show_inparalogs_data(temp_list[0])
+                c1,c2=con.columns(2)
+                with c1.popover("Data Source", use_container_width=True):
+                    st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
+                with c2.popover("Research Article", use_container_width=True):
+                    st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
+        st.toast("Task completed successfully.")
+
+    elif start_button:
         if tid:
             matching_row = df[df['Transcript id'] == tid]
             if not matching_row.empty:
@@ -35,6 +67,11 @@ def orthologs_info_page():
                     show_orthologs_data(tid)
                     st.subheader("Paralog")
                     show_inparalogs_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
             else:
                 st.error(f"No match found for Gene ID: {tid}")
             st.toast("Task completed successfully.")
@@ -53,6 +90,11 @@ def orthologs_info_page():
                     show_orthologs_data(mtid_list, is_multi=True)
                     st.subheader("Paralog")
                     show_inparalogs_data(mtid_list, is_multi=True)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
             if not_found_ids:
                 st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
 
@@ -68,6 +110,11 @@ def orthologs_info_page():
                     show_orthologs_data(tid)
                     st.subheader("Paralog")
                     show_inparalogs_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
             else:
                 st.error(f"No match found for NCBI ID: {locid}")
             st.toast("Task completed successfully.")
@@ -86,6 +133,11 @@ def orthologs_info_page():
                         show_orthologs_data(mtid_list, is_multi=True)
                         st.subheader("Paralog")
                         show_inparalogs_data(mtid_list, is_multi=True)
+                        c1,c2=con.columns(2)
+                        with c1.popover("Data Source", use_container_width=True):
+                            st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
+                        with c2.popover("Research Article", use_container_width=True):
+                            st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
                 st.toast("Task completed successfully.")
 
             if rejected:

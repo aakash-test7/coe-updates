@@ -4,6 +4,14 @@ from pages.footer import base_footer
 
 def snp_info_page():
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
+    
+    # Show "Back to Home" button if navigation was programmatic
+    if st.session_state.get("programmatic_nav", False):
+        if st.button("← Back to Home", key="back_to_home_snp", type="secondary"):
+            st.session_state["programmatic_nav"] = False
+            st.session_state["current_page"] = "HOME"
+            st.rerun()
+    
     header_styled("Single Nucleotide Polymorphism Calling", "It gives the details of putative SNP variations present in the chickpea pangenome")
     col1, col2 = st.columns(2)
 
@@ -36,6 +44,12 @@ def snp_info_page():
                 with con:
                     st.subheader("Single Nucleotide Polymorphism (SNP)")
                     show_snp_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("https://cegresources.icrisat.org/cicerseq/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://doi.org/10.1038/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
+
             else:
                 st.error(f"No match found for Gene ID: {tid}")
             st.toast("Task completed successfully.")
@@ -50,6 +64,12 @@ def snp_info_page():
                 with con:
                     st.subheader("Single Nucleotide Polymorphism (SNP)")
                     show_snp_data(mtid_list, is_multi=True)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("https://cegresources.icrisat.org/cicerseq/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://doi.org/10.1038/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
+
             if not_found_ids:
                 st.error(f"No matches found for Gene IDs: {', '.join(not_found_ids)}")
             st.toast("Task completed successfully.")
@@ -61,6 +81,12 @@ def snp_info_page():
                 with con:
                     st.subheader("Single Nucleotide Polymorphism (SNP)")
                     show_snp_data(tid)
+                    c1,c2=con.columns(2)
+                    with c1.popover("Data Source", use_container_width=True):
+                        st.write("https://cegresources.icrisat.org/cicerseq/")
+                    with c2.popover("Research Article", use_container_width=True):
+                        st.write("""<a href="https://doi.org/10.1038/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
+
             else:
                 st.error(f"No match found for NCBI ID: {locid}")
             st.toast("Task completed successfully.")
@@ -76,6 +102,12 @@ def snp_info_page():
                     with con:
                         st.subheader("Single Nucleotide Polymorphism (SNP)")
                         show_snp_data(mtid_list, is_multi=True)
+                        c1,c2=con.columns(2)
+                        with c1.popover("Data Source", use_container_width=True):
+                            st.write("https://cegresources.icrisat.org/cicerseq/")
+                        with c2.popover("Research Article", use_container_width=True):
+                            st.write("""<a href="https://doi.org/10.1038/s41586-021-04066-1" target="_blank">Varshney, R.K., Roorkiwal, M., Sun, S. et al. A chickpea genetic variation map based on the sequencing of 3,366 genomes. Nature 599, 622–627 (2021). https://doi.org/10.1038/s41586-021-04066-1</a>""", unsafe_allow_html=True)
+
                 st.toast("Task completed successfully.")
 
             if rejected:

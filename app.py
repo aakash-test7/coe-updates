@@ -35,10 +35,10 @@ styles = {
         "color": "white",
     },
     "active": {
-        "background-color": "rgba(255, 255, 255, 0.25)",  # Background color for the active heading
+        "background-color": "rgba(252, 211, 172, 0.50)",  # Background color for the active heading
     },
     "hover": {
-        "background-color": "rgba(255, 255, 255, 0.35)",  # Background color on hover
+        "background-color": "rgba(252, 211, 172, 1)",  # Background color on hover
     },
     "img": {
         "height": "5rem",  # Logo height

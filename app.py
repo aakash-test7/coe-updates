@@ -11,7 +11,7 @@ logo_path = ("logo1.svg")
 options={"use_padding": True, "show_menu":False}
 styles = {
     "nav": {
-        "background-color": "rgb(197, 91, 17)",  # Background color of the navigation bar
+        "background-color": "#FAF7E6",  # Background color of the navigation bar
         "height": "4rem",  # Set the total height of the navigation bar
         "display": "flex",  # Use flexbox for layout
         "align-items": "center",  # Vertically center the items
@@ -108,8 +108,7 @@ st.sidebar.markdown("""
 """, unsafe_allow_html=True)
 for name, link in external_links.items():
     st.sidebar.markdown(
-f'<a href="{link}" target="_blank" class="sidebar-button" style="text-decoration: none; background-color: rgb(197,91,17); color: black; font-weight: bold;" onmouseover="this.style.textDecoration=\'none\'; this.style.color=\'black\';" onmouseout="this.style.textDecoration=\'none\'; this.style.color=\'black\';">{name}</a>',
-        unsafe_allow_html=True)
+f'<a href="{link}" target="_blank" class="sidebar-button" style="text-decoration: none; color: #fff; background-color: rgb(197,91,17); font-weight: bold;" onmouseover="this.style.textDecoration=\'none\'; this.style.color=\'black\';" onmouseout="this.style.textDecoration=\'none\'; this.style.color=\'black\';">{name}</a>', unsafe_allow_html=True)
     
 #visitor
 if 'first_access' not in st.session_state:
@@ -188,59 +187,120 @@ st.markdown(
             }
         }
         .stSidebar {
-        background-color: #e6c4aeff;
+        background-color: #FAF7E6; /*#e6c4aeff*/
     }
         .sidebar-button {
             width: 100%;
             padding: 10px;
             font-size: 16px;
             color: white;
-            background-color: #833c0d; /* Dark Red */
+            background-color: #833c0d; /* Dark Red #833c0d */
             border: 2px solid #5a2a09;
-            border-radius: 15px;
+            border-radius: 1rem;
             cursor: pointer;
             margin-bottom: 5px;
             text-align: center;
             display: block;
             text-decoration: none;
-            transition: all 0.3 ease;
+            transition: all 0.3s ease-in-out;
         }
 
         .sidebar-button:hover {
-            background-color: rgb(197,91,17);
-            border-color: #c97b4b;
+            transform: scale(1.05);
         }
 
         .stButton>button:hover p {
-            color: white !important; /* Keep text visible */
+            color: #000 !important; /* Keep text visible */
         }
         .stButton>button {
             width: 100%;
             padding: 10px;
             font-size: 16px;
-            color: white;
-            background-color: #833c0d; /* Dark Red */
-            border: 0px solid #5a2a09;
-            border-radius: 15px;
+            color: #fff;
+            background-color: #833c0d; /* Dark Red #833c0d */
+            border: 1px solid #5a2a09;
+            border-radius: 1rem;
             cursor: pointer;
             margin-bottom: 5px;
             text-align: center;
             display: block;
             text-decoration: none;
             transition: all 0.3 ease;
+            
         }
 
         .stButton>button:hover {
-            background-color: rgb(197,91,17);
-            border-color: #c97b4b;
+            background-color: #FCD3AC;
+            border-color: #5D4037;
+            color: #000 !important; /* Keep text visible */
         }
         .stTextInput input{
-            color: white !important;
+            background-color: #FCD3AC;
         }
         
         .stTextInput input::placeholder {
-            color: lightgray !important;
+            color: #2c2d2d !important;
         }
+
+        /* Style Streamlit text_area inputs and placeholders */
+        .stTextArea textarea {
+            color: #000 !important;
+            background-color: #FCD3AC !important;
+        }
+
+        /* Modern browsers: placeholder styling for textarea */
+        .stTextArea textarea::placeholder {
+            color: #2c2d2d !important;
+            opacity: 1 !important; /* Ensure placeholder visible */
+        }
+
+        /* WebKit (Chrome/Safari) */
+        .stTextArea textarea::-webkit-input-placeholder { color: #2c2d2d !important; }
+        /* Mozilla Firefox 19+ */
+        .stTextArea textarea::-moz-placeholder { color: #2c2d2d !important; }
+        /* Mozilla Firefox 4 to 18 */
+        .stTextArea textarea:-moz-placeholder { color: #2c2d2d !important; }
+        /* Internet Explorer 10+ */
+        .stTextArea textarea:-ms-input-placeholder { color: #2c2d2d !important; }
+
+        /* Style dropdown (st.selectbox) - background and text color */
+        .stSelectbox div[data-baseweb="select"] > div {
+            background-color: #FCD3AC !important;
+            color: #000 !important;
+        }
+        
+        .stSelectbox input {
+            background-color: #FCD3AC !important;
+            color: #000 !important;
+        }
+
+        /* Style multiselect - background and text color */
+        .stMultiSelect div[data-baseweb="select"] > div {
+            background-color: #FCD3AC !important;
+            color: #000 !important;
+        }
+        
+        .stMultiSelect input {
+            background-color: #FCD3AC !important;
+            color: #000 !important;
+        }
+
+        /* Style multiselect selected tags/chips */
+        .stMultiSelect div[data-baseweb="tag"] {
+            background-color: #FCD3AC !important;
+            color: #000 !important;
+        }
+        
+        /* Style multiselect tag close button (X) */
+        .stMultiSelect div[data-baseweb="tag"] svg {
+            color: #000 !important;
+        }
+
+        /* Ensure dropdown options remain readable (dark text on light background) */
+        [data-baseweb="popover"] {
+            color: black !important;
+        }
+
         .streamlit-expanderContent pre, .element-container pre {
             white-space: pre-wrap !important;
             word-wrap: break-word !important;

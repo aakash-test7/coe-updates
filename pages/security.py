@@ -99,10 +99,15 @@ def add_user(username, password, first_name, last_name, email):
         conn.close()
         return False
 
-# Function to validate email
 def validate_email(email):
-    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
-    return re.match(pattern, email) is not None
+    pattern = r'''
+        ^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+      # Local part
+        (?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*  # Dots in local part
+        @
+        (?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+  # Subdomains
+        [a-zA-Z]{2,}$                            # Top-level domain
+    '''
+    return re.match(pattern, email, re.VERBOSE) is not None
 
 def validate_username_length(username):
     return 1 <= len(username) <= 20

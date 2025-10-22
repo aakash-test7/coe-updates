@@ -3,7 +3,6 @@ from backend import process_locid, process_mlocid, df, show_sequence_data_p, mlo
 from pages.footer import base_footer
 
 def crispr_info_page():
-    st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
     header_styled("CRISPR Construct Design", "It provides detailed information about the region to be edited for construct design purpose.")
     col1, col2 = st.columns(2)
 

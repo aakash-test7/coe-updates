@@ -1,5 +1,5 @@
 import streamlit as st
-from backend import process_locid, process_mlocid, df, show_fpkm_matrix, mlocid_error,header_styled, fpkm_glossary, show_df28_matrix, show_df28_log2, show_fpkm_log2, create_comparison_chart, create_comparison_chart_log2
+from backend import process_locid, process_mlocid, df, show_fpkm_matrix, mlocid_error,header_styled, fpkm_glossary, show_df28_matrix, show_df28_log2, show_fpkm_log2, create_comparison_chart, create_comparison_chart_log2, combined_data, display_ml_model_prediction
 from pages.footer import base_footer
 
 def spatial_info_page():
@@ -41,6 +41,71 @@ def spatial_info_page():
             mlocid_list = list(set(mlocid_list))
             mlocid = ",".join(mlocid_list)
 
+    # ML Model Prediction Search Section
+    #st.markdown("---")
+    with st.expander("ML Model Prediction Search - Find Genes by Tissue Expression Patterns", expanded=False):
+        st.caption("Search genes based on ML-predicted tissue expression patterns. Perfect for exploring genes without knowing specific IDs!")
+        
+        # Define available ML prediction options
+        ml_prediction_options = [
+            "ST - Seed Tissue",
+            "FP - Flower Parts",
+            "FDS - Flower Developmental Stages",
+            "GT - Green Tissue",
+            "RT - Root Tissue"
+        ]
+        
+        selected_predictions = st.multiselect(
+            "Select Tissue Predictions (multiple allowed)",
+            options=ml_prediction_options,
+            placeholder="Choose one or more tissue types",
+            key="spatial_ml_prediction_search"
+        )
+        c1,c2,c3=st.columns(3)
+        if c2.button("Search by ML Predictions", use_container_width=True, key="spatial_ml_search_btn", type="secondary"):
+            if selected_predictions:
+                # Extract short codes (ST, FP, FDS, GT, RT) from selections
+                prediction_codes = [pred.split(" - ")[0] for pred in selected_predictions]
+                
+                with st.spinner("Searching ML prediction database..."):
+                    # Search combined_data for matching predictions
+                    all_transcript_ids = set()
+                    matches_info = []
+                    
+                    for prediction in prediction_codes:
+                        matches = combined_data[
+                            combined_data['Resultant'].astype(str).str.contains(prediction, case=False, na=False)
+                        ]
+                        if not matches.empty:
+                            found_ids = matches['Transcript id'].unique().tolist()
+                            all_transcript_ids.update(found_ids)
+                            matches_info.append({
+                                'prediction': prediction,
+                                'count': len(found_ids),
+                                'found_ids': found_ids  # Store all IDs for this prediction
+                            })
+                    
+                    all_transcript_ids = list(all_transcript_ids)
+                    
+                if all_transcript_ids:
+                    st.success(f"Found {len(all_transcript_ids)} total genes across selected tissue predictions!")
+                    
+                    # Display Gene IDs separately for each prediction
+                    st.write("**Gene IDs by Tissue Type:**")
+                    
+                    for info in matches_info:
+                        full_name = next(opt for opt in ml_prediction_options if opt.startswith(info['prediction']))
+                        st.write(f"**{full_name}** - {info['count']} genes:")
+                        gene_ids_str = ", ".join(info['found_ids'])
+                        st.code(gene_ids_str, language="text")
+                    
+                    st.info("**Tip:** Copy any set of Gene IDs above and paste them into the 'Multiple Gene IDs' field, then click the Search button to view expression data!")
+                else:
+                    st.error("No genes found for the selected ML predictions!")
+            else:
+                st.warning("Please select at least one tissue prediction!")
+    
+
     con_btn1, con_btn2, con_btn3 = st.columns([2, 2, 2])
     with con_btn2:
         start_button = st.button("Search", use_container_width=True, key="spatial_Searchbutton1")
@@ -70,6 +135,10 @@ def spatial_info_page():
                         st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
                     create_comparison_chart(temp_list, is_multi=True) if len(temp_list) > 1 else create_comparison_chart(temp_list[0])
                     fpkm_glossary()
+            
+            # Display ML Model Prediction
+            display_ml_model_prediction(temp_list)
+            
             with tab2:
                 con=st.container(border=True)
                 with con:
@@ -89,6 +158,10 @@ def spatial_info_page():
                         st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
                     create_comparison_chart_log2(temp_list, is_multi=True) if len(temp_list) > 1 else create_comparison_chart_log2(temp_list[0])
                     fpkm_glossary()
+            
+            # Display ML Model Prediction (already shown in tab1, but including for consistency)
+            # Skipping here since it's already displayed after tab1
+        
         st.toast("Task completed successfully.")
     elif start_button:
 
@@ -117,6 +190,10 @@ def spatial_info_page():
                             st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
                         create_comparison_chart(tid)
                         fpkm_glossary()
+                
+                # Display ML Model Prediction
+                display_ml_model_prediction(tid)
+                
                 with tab2:
                     con = st.container(border=True)
                     with con:
@@ -171,6 +248,10 @@ def spatial_info_page():
                             st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
                         create_comparison_chart(mtid_list, is_multi=True)
                         fpkm_glossary()
+                
+                # Display ML Model Prediction
+                display_ml_model_prediction(mtid_list)
+                
                 with tab2:
                     con = st.container(border=True)
                     with con:
@@ -220,6 +301,10 @@ def spatial_info_page():
                             st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
                         create_comparison_chart(tid)
                         fpkm_glossary()
+                
+                # Display ML Model Prediction
+                display_ml_model_prediction(tid)
+                
                 with tab2:
                     con = st.container(border=True)
                     with con:
@@ -272,6 +357,10 @@ def spatial_info_page():
                                 st.write("""<a href="https://pubmed.ncbi.nlm.nih.gov/29637575/" target="_blank">Kudapa H, Garg V, Chitikineni A, Varshney RK. The RNA-Seq-based high resolution gene expression atlas of chickpea (Cicer arietinum L.) reveals dynamic spatio-temporal changes associated with growth and development. Plant Cell Environ. 2018 Sep;41(9):2209-2225. doi: 10.1111/pce.13210. Epub 2018 May 16. PMID: 29637575.</a>""", unsafe_allow_html=True)
                             create_comparison_chart(mtid_list, is_multi=True)
                             fpkm_glossary()
+                    
+                    # Display ML Model Prediction
+                    display_ml_model_prediction(mtid_list)
+                    
                     with tab2:
                         con = st.container(border=True)
                         with con:

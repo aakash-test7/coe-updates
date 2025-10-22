@@ -6,7 +6,8 @@ def tools_page():
     # Show "Back to Home" button if navigation was programmatic
     st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
     if st.session_state.get("programmatic_nav", False):
-        if st.button("← Back to Home", key="back_to_home_tools", type="secondary"):
+        c1,c2,c3,c4=st.columns(4)
+        if c1.button("← Back to Home", key="back_to_home_tools", type="secondary"):
             st.session_state["programmatic_nav"] = False
             st.session_state["current_page"] = "HOME"
             st.rerun()

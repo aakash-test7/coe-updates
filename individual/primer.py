@@ -131,6 +131,8 @@ def primer_qrt():
             mlocid_list = [item.strip() for item in mlocid.replace(",", " ").split()]
             mlocid_list = list(set(mlocid_list))
             mlocid = ",".join(mlocid_list)
+    con=st.container(border=True)
+    seq_input=con.text_area("Enter the Sequence: ", placeholder="e.g., ATGC...", key="primer_Seq_input1", height=100).strip()
 
     con1, con2, con3 = st.columns([2, 2, 2])
     with con2:
@@ -257,6 +259,22 @@ def primer_qrt():
 
             if failed_blast:
                 st.warning(f"Primer Design failed or no JOB ID returned for NCBI ID(s): {', '.join(failed_blast)}")
+        
+        # CASE 5: Direct Sequence Input
+        if seq_input:
+            temp_id = seq_input
+            con=st.container(border=True)
+            with con:
+                st.subheader("Primer Design")
+                with st.spinner("Designing Primer...", show_time=True):
+                    rid = run_blast_and_get_primer(temp_id)
+                    if rid:
+                        st.success(f"JOB ID obtained: `{rid}`")
+                        result_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={rid}"
+
+                        st.components.v1.iframe(src=result_url, height=1000, scrolling=True)
+                    else:
+                        st.error("Failed to obtain JOB ID. Please try again.")
 
     elif tid == "":
         st.warning("Need Gene ID to proceed.")
@@ -266,15 +284,6 @@ def primer_qrt():
     return
 
 def primer_info_page():
-    #st.markdown("""<style>.block-container {padding-top: 4rem;}</style>""", unsafe_allow_html=True)
-    
-    # Show "Back to Home" button if navigation was programmatic
-    #if st.session_state.get("programmatic_nav", False):
-    #    if st.button("← Back to Home", key="back_to_home_primer", type="secondary"):
-    #        st.session_state["programmatic_nav"] = False
-    #        st.session_state["current_page"] = "HOME"
-    #        st.rerun()
-    
     header_styled("PRIMER Designing for Gene Cloning and Expression Analysis", "Enter the Gene ID or NCBI ID to fetch the target sequence and then paste the nucleotide sequence in the Primer design Template section and get the set of primers just clicking Pick primers.")
     if 'active_primer' not in st.session_state:
         st.session_state.active_primer = 'Cloning'

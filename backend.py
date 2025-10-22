@@ -42,7 +42,7 @@ def generate_signed_url(blob_name):
 # Initialize the Google Cloud Storage client
 client = storage.Client(credentials=credentials)
 
-bucket_name = os.getenv("GOOGLE_CLOUD_STORAGE_BUCKET", "chickpea-transcriptome3")
+bucket_name = os.getenv("GOOGLE_CLOUD_STORAGE_BUCKET", "chickpea-2025")
 
 def read_excel_from_gcs(bucket_name, blob_name, header=0):
     """Reads an Excel file from Google Cloud Storage and returns it as a DataFrame."""

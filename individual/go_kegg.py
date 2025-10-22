@@ -9,7 +9,8 @@ def go_info_page():
         st.session_state["first_go_visit"] = True
     # Show "Back to Home" button if navigation was programmatic
     if st.session_state.get("programmatic_nav", False):
-        if st.button("← Back to Home", key="back_to_home_go", type="secondary"):
+        c1,c2,c3,c4=st.columns(4)
+        if c1.button("← Back to Home", key="back_to_home_go", type="secondary"):
             st.session_state["programmatic_nav"] = False
             st.session_state["current_page"] = "HOME"
             st.session_state["first_go_visit"] = True

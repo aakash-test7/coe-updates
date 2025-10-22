@@ -20,6 +20,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from streamlit.components.v1 import html as st_components_html
 from google.oauth2 import service_account
 from datetime import timedelta
+import re 
 
 secrets = st.secrets["gcp_service_account"]
 credentials = service_account.Credentials.from_service_account_info(secrets)
@@ -1404,7 +1405,8 @@ def transcriptid_info(tid):
                 "miRNA Target",
                 "Transcription Factor",
                 "Orthologs",
-                "Paralogs"
+                "Paralogs",
+                "Model Prediction"
             ]
             sections = [(_slugify(lbl), lbl) for lbl in section_labels]
             render_section_navbar(sections, title="Sections")
@@ -1570,6 +1572,7 @@ def transcriptid_info(tid):
                     st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
                 with c2.popover("Research Article", use_container_width=True):
                     st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
+                section_anchor(sections[14][0])
         else:
             st.error("Gene ID not found\n")
     else:
@@ -1603,7 +1606,8 @@ def multi_transcriptid_info(mtid):
             "miRNA Target",
             "Transcription Factor",
             "Orthologs",
-            "Paralogs"
+            "Paralogs",
+            "Model Prediction"
         ]
         sections = [(_slugify(lbl), lbl) for lbl in section_labels]
         render_section_navbar(sections, title="Sections")
@@ -1767,6 +1771,7 @@ def multi_transcriptid_info(mtid):
                 st.write("OrthoVenn3 (2022) - https://orthovenn3.bioinfotoolkits.net/")
             with c2.popover("Research Article", use_container_width=True):
                 st.write('<a href="https://doi.org/10.1093/nar/gkad313" target="_blank">Sun J, Lu F, Luo Y, Bie L, Xu L, Wang Y, OrthoVenn3: an integrated platform for exploring and visualizing orthologous data across genomes, Nucleic Acids Research, Volume 51, Issue W1, 5 July 2023, Pages W397-W403, https://doi.org/10.1093/nar/gkad313</a>', unsafe_allow_html=True)
+            section_anchor(sections[14][0])
     else:
         st.error("Gene ID not found\n")
 
@@ -1783,60 +1788,81 @@ glossary_entries = {
     'GT - Green Tissues': '- plant tissues that are photosynthetic, primarily found in leaves and stems.',
     'RT - Root Tissues': '- the tissues found in the root system of a plant, involved in nutrient absorption and anchorage.'}
 
-def user_input_menu(tid):
-        transcriptid_info(tid)
-        if tid in combined_data['Transcript id'].values:
-            con=st.container(border=True)
-            with con:
-                st.subheader("Model Prediction")
+def display_ml_model_prediction(tid_list):
+    """
+    Display ML model predictions for single or multiple transcript IDs.
+    
+    Args:
+        tid_list: Single transcript ID (str) or list of transcript IDs
+    
+    Returns:
+        None (displays results in Streamlit)
+    """
+    # Convert single ID to list for uniform processing
+    if isinstance(tid_list, str):
+        tid_list = [tid_list]
+    
+    con = st.container(border=True)
+    with con:
+        st.subheader("Model Prediction")
+        
+        unique_resultant_values = []
+        ids_with_predictions = []
+        ids_without_predictions = []
+        
+        # Process each transcript ID
+        for tid in tid_list:
+            tid = tid.strip()
+            if tid in combined_data['Transcript id'].values:
                 resultant_value = combined_data[combined_data['Transcript id'] == tid]['Resultant'].values[0]
-                st.write(f"Stage/Tissue Group Concerned {tid}: {resultant_value}\n")
-                unique_resultant_values = []
+                
+                # Display individual prediction
+                if len(tid_list) == 1:
+                    st.write(f"Stage/Tissue Group Concerned for {tid}: {resultant_value}")
+                else:
+                    st.write(f"{tid} - Stage/Tissue Group Concerned: {resultant_value}")
+                
+                # Collect unique tissues
                 tissues = resultant_value.split(", ")
                 for tissue in tissues:
                     if tissue not in unique_resultant_values:
-                            unique_resultant_values.append(tissue)
-                for term in unique_resultant_values:
-                    with st.expander(glossary_first[term],expanded=False):
-                        definition = glossary_entries.get(glossary_first[term], "Definition not available.")
-                        st.write(definition)
-                perf_chart(unique_resultant_values)
-        else:
-            con=st.container(border=True)
-            with con:
-                st.subheader("Model Prediction")
-                st.write("Expression Status : normal  ( no particular tissue/stage favoured ) 0 \n")
+                        unique_resultant_values.append(tissue)
+                
+                ids_with_predictions.append(tid)
+            else:
+                ids_without_predictions.append(tid)
+        
+        # Display IDs without predictions together
+        if ids_without_predictions:
+            st.write("")  # Add spacing
+            if len(ids_without_predictions) == 1:
+                st.write(f"{ids_without_predictions[0]} - Expression Status: normal (no particular tissue/stage favoured)")
+            else:
+                st.write(f"**IDs with normal expression (no particular tissue/stage favoured):**")
+                st.write(", ".join(ids_without_predictions))
+        
+        if unique_resultant_values:
+            st.write("")  # Add spacing
+            st.write("**Tissue/Stage Definitions:**")
+            for term in unique_resultant_values:
+                with st.expander(glossary_first[term], expanded=False):
+                    definition = glossary_entries.get(glossary_first[term], "Definition not available.")
+                    st.write(definition)
+            
+            # Display performance chart
+            perf_chart(unique_resultant_values)
+
+def user_input_menu(tid):
+        transcriptid_info(tid)
+        display_ml_model_prediction(tid)
         return
 
 def multi_user_input_menu(mtid):
         multi_transcriptid_info(mtid)
-        if "," in mtid:
-                mtid_list = mtid.split(",")
-        elif " " in mtid:
-                mtid_list = mtid.split(" ")
-        else:
-                mtid_list= [mtid.strip()]
+        mtid_list = re.split(r'[,\s]+', mtid.strip())
+        mtid_list = [tid.strip() for tid in mtid_list if tid.strip()]
         mtid_list.sort()
-        con=st.container(border=True)
-        with con:      
-            st.subheader("Model Prediction")
-            unique_resultant_values = []
-            for tid in mtid_list:
-                if tid in combined_data['Transcript id'].values:
-                    resultant_value = combined_data[combined_data['Transcript id'] == tid]['Resultant'].values[0]
-                    st.write(f"{tid} Stage/Tissue Group Concerned: {resultant_value}\n")
-                    tissues = resultant_value.split(", ")
-                    for tissue in tissues:
-                        if tissue not in unique_resultant_values:
-                            unique_resultant_values.append(tissue)
-                    for term in unique_resultant_values:
-                        with st.expander(glossary_first[term],expanded=False):
-                            definition = glossary_entries.get(glossary_first[term], "Definition not available.")
-                            st.write(definition)
-                else:
-                    st.write(f"{tid} Expression Status : normal  ( no particular tissue/stage favoured ) 0 \n")
-            if unique_resultant_values:
-                perf_chart(unique_resultant_values)
+        display_ml_model_prediction(mtid_list)
         return
 
 def process_locid(locid, show_output=True):
@@ -2146,7 +2172,7 @@ def header_styled(title: str, tagline: str):
 
             .custom-header-box {{
                 text-align: center;
-                background: linear-gradient(to bottom, #833c0d 0%, #5a2a09 100%);
+                background: linear-gradient(to bottom, #833c0d 0%, #7a3e1b 100%);
                 padding: 28px 25px;
                 margin-bottom: 35px;
                 border-radius: 8px;
@@ -2246,13 +2272,6 @@ def header_styled(title: str, tagline: str):
     """, unsafe_allow_html=True)
 
 def run_blast_and_get_rid(sequence_input):
-    #chrome_options = Options()
-    #chrome_options.add_argument("--disable-gpu")
-    #chrome_options.add_argument("--no-sandbox")
-    #chrome_options.add_argument("--window-size=1920,1200")
-    #chrome_options.add_argument('--disable-dev-shm-usage')
-
-    #driver = webdriver.Chrome(options=chrome_options)
     driver=web_driver()
     rid = None
 
@@ -2267,6 +2286,37 @@ def run_blast_and_get_rid(sequence_input):
 
         blast_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "#blastButton1 input.blastbutton"))
+        )
+        blast_button.click()
+
+        time.sleep(10)
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+        rid_input = soup.find("input", {"name": "RID"})
+        if rid_input:
+            rid = rid_input.get("value")
+
+    except Exception as e:
+        st.error(f"Error during BLAST submission: {e}")
+    finally:
+        driver.quit()
+
+    return rid
+
+def run_blast_and_get_protein(sequence_input):
+    driver=web_driver()
+    rid = None
+
+    try:
+        driver.get("https://blast.ncbi.nlm.nih.gov/Blast.cgi?PROGRAM=blastp&PAGE_TYPE=BlastSearch&LINK_LOC=blasthome")
+
+        textarea = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "seq"))
+        )
+        textarea.clear()
+        textarea.send_keys(sequence_input)
+
+        blast_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "input.blastbutton"))
         )
         blast_button.click()
 
@@ -2347,45 +2397,28 @@ def run_blast_and_get_primer(sequence_input):
         )
         get_primers_btn.click()
 
-        primer_url = None
-        end_time = time.time() + 50
+        end_time = time.time() + 80
         while time.time() < end_time:
             time.sleep(2)
             page = driver.page_source
-            # quick string check for the primertool page
             if "primertool.cgi" in page:
                 soup = BeautifulSoup(page, "html.parser")
-                # find anchor tags linking to primertool.cgi
                 a = soup.find("a", href=lambda h: h and "primertool.cgi" in h)
                 if a and a.get("href"):
-                    href = a.get("href")
-                    # Some links may be relative; make absolute if needed
-                    if href.startswith("http"):
-                        primer_url = href
-                    else:
-                        primer_url = requests.compat.urljoin(driver.current_url, href)
+                    
                     break
-                # fallback: some pages show JOB ID in plain text, e.g. 'JOB ID:xc8Y6ErZR3FgS9dO2i7zfKA14k6NJvlTjA'
-                # attempt to extract that using regex from the page text
                 import re
                 m = re.search(r"JOB\s*ID\s*[:\-]?\s*([A-Za-z0-9_\-]+)", page)
                 if m:
                     job_id = m.group(1)
-                    primer_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={job_id}"
+                    #primer_url = f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={job_id}"
                     break
 
     except Exception as e:
-        #logging.exception("Error during BLAST submission")
         try:
             st.error(f"Error during BLAST submission: {e}")
         except Exception:
             pass
     finally:
         driver.quit()
-
-    # Prefer returning the primer tool URL (contains job_key); fall back to RID if needed
-    #if primer_url:
-    #    return primer_url
-    #if job_id:
-    #    return f"https://www.ncbi.nlm.nih.gov/tools/primer-blast/primertool.cgi?job_key={job_id}"
     return job_id
